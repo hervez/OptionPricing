@@ -5,8 +5,6 @@ import re
 import pandas as pd
 
 class OptionDataGathering(): 
-   """Class to gather the informations relative to an option type, at a given date for a given underlying. 
-   If save_data is true, the the data is automatically saved as a CSV file."""
 
    def __init__(self, 
                 underlying: str, 
@@ -24,6 +22,7 @@ class OptionDataGathering():
       self.save_data = save_data 
       self.verbose = verbose
       self.file_path = './results/{}/{}_{}'.format(self.underlying, self.option_type, self.expiration_date)
+      # self.file_name = self.option_type + '_' + self.expiration_date
 
       if self.save_data: 
          if not os.path.exists('./results'):
@@ -80,5 +79,5 @@ class OptionDataGathering():
 
 if __name__ == '__main__': 
 
-   gatherer = OptionDataGathering('GOOG', 'call', '2023-04-21')
+   gatherer = OptionDataGathering('AAPL', 'call', '2023-04-21')
    # print(gatherer.data) 

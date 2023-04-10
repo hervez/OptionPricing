@@ -6,9 +6,9 @@ from scipy.fft import fft, ifft # allow us to perform Fast Fourier transform and
 
 class OptionPricing:
     """S0 = initial price, K = Striking price, T = option maturity (in years),
-    r = constant short rate, sigma = constant volatility, pf is an array approximating the fx(x)
-    all of which must be >0 ? """
-    def __init__(self, S0, K, T, r, sigma, pf=0):
+    r = constant short rate, sigma = constant volatility
+    all must be >0 ? """
+    def __init__(self, S0, K, T, r, sigma):
         self.S0 = S0 
         self.K = K
         self.T = T

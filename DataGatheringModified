@@ -103,9 +103,10 @@ if __name__ == '__main__':
 
        gatherer = OptionDataGathering('GOOG', 'call', '2023-04-21')
    # print(gatherer.data)
-T = gatherer.timeT() 
-     #print(x)
+T = gatherer.timeT()/365 
+     #print(T)
 sigma = gatherer.SigmaFromIv('GOOG', 'call', '2023-04-21')
+   #print(sigma)
 # K is given by us
 """ WE STILL NEED S0 and r THOUGH"""
     

@@ -14,7 +14,6 @@ class OptionPricing:
         self.T = T
         self.r = r
         self.sigma = sigma
-        self.pf= pf
         self.d1 = (math.log(self.S0/self.K) + (self.r + (self.sigma**2)/2)*self.T)/(self.sigma*math.sqrt(self.T))
         self.d2 = self.d1 - self.sigma*math.sqrt(self.T)
         self.Nd1 = norm.cdf(self.d1, 0, 1)     # N(d1)

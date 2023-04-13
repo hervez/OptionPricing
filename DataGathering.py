@@ -15,6 +15,7 @@ class OptionDataGathering():
                 underlying: str, 
                 option_type: str,
                 expiration_date: str, 
+                evaluation_date: str, 
                 save_data: bool = True,
                 verbose: bool = True): 
 
@@ -24,6 +25,7 @@ class OptionDataGathering():
       else:
          raise ValueError('Invalid option type. Must be "call" or "put".')
       self.expiration_date = expiration_date 
+      self.evaluation_date = evaluation_date 
       self.save_data = save_data 
       self.verbose = verbose
       self.file_path = './results/{}/{}_{}'.format(self.underlying, self.option_type, self.expiration_date)
@@ -31,9 +33,12 @@ class OptionDataGathering():
       if self.save_data: 
          folder_creation('results', self.verbose)
 
-      self.data = self.get_option_data(self.underlying, self.option_type, self.expiration_date)
+      self.option_data = self.get_option_data(self.underlying, self.option_type, self.expiration_date)
       self.underlying_data = self.get_underlying_data(self.underlying, '10y')
+      self.underlying_value_at_evaluation_date = self.underlying_data.loc[self.underlying_data['Date'] == datetime.strptime(self.evaluation_date, '%Y-%m-%d').date(), 'Close'].iloc[0]
       self.risk_free_rate = self.get_risk_free_rate()
+      self.historical_volatilities = self.get_historical_volatilities()
+      self.historical_volatility = self.historical_volatilities.iloc[-1]
 
    def download_underlying_data(self, symbol: str, period: str): 
       """ Download a dataframe containing the historical data of a given stock """ 
@@ -58,13 +63,19 @@ class OptionDataGathering():
 
       path = './results/{}/{}_data.csv'.format(symbol, symbol)
       try: 
-         data = pd.read_csv(path) 
+         data = pd.read_csv(path, parse_dates=[0]) 
+         data['Date'] = pd.to_datetime(data['Date'], errors='coerce', utc=True)
+         data = data.dropna(subset=['Date'])
+         data['Date'] = data['Date'].dt.date
          if self.verbose: 
             print('{} data recovered from: '.format(symbol) + path)
       except FileNotFoundError:
          data = self.download_underlying_data(symbol, period)
          data['Return'] = data['Close'].pct_change()
          data['Log_return'] = np.log(data['Close']) - np.log(data['Close'].shift(1))
+         data['Date'] = pd.to_datetime(data['Date'], errors='coerce', utc=True)
+         data = data.dropna(subset=['Date'])
+         data['Date'] = data['Date'].dt.date
          if self.verbose: 
             print('{} data downloaded from the web.'.format(symbol))
          if self.save_data: 
@@ -124,8 +135,12 @@ class OptionDataGathering():
 
       return risk_free_rate
 
-   def historical_volatility(self):
-      return None 
+   def get_historical_volatilities(self):
+      """ Return the historical volatility of the price of the undelrying at the close """ 
+
+      historical_volatilities = self.underlying_data['Close'].rolling(100).std()
+
+      return historical_volatilities
 
    def SigmaFromIv(self, symbol, option_type, expiration_date):
         ''' K(strike price) needs to be precised here ''' 
@@ -148,7 +163,9 @@ class OptionDataGathering():
 
 if __name__ == '__main__': 
 
-   gatherer = OptionDataGathering('AAPL', 'call', '2023-04-21')
+   gatherer = OptionDataGathering('AAPL', 'call', '2023-04-21', '2023-04-10')
+   print(gatherer.historical_volatility)
+   print(gatherer.underlying_value_at_evaluation_date)
    print(gatherer.risk_free_rate)
    # T = gatherer.timeT()/365 
    # print(T)

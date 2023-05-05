@@ -1,0 +1,103 @@
+from datetime import datetime
+import math
+import numpy as np 
+import matplotlib as mat 
+from scipy.stats import norm
+
+from DataGathering import OptionDataGathering
+
+
+class OptionPricingBlackScholesMerton(): 
+
+    def __init__(self, underlying: str, option_type: str, expiration_date: str, evaluation_date: str): 
+
+        self.underlying = underlying 
+        self.option_type = option_type 
+        self.expiration_date = expiration_date 
+        self.evaluation_date = evaluation_date
+
+        gatherer = OptionDataGathering(self.underlying, self.option_type, self.expiration_date, self.evaluation_date, verbose=False)
+
+        self.S_0 = gatherer.underlying_value_at_evaluation_date
+        self.r = gatherer.risk_free_rate
+        self.K = 100 
+        self.T = int((datetime.strptime(self.expiration_date, '%Y-%m-%d') - datetime.strptime(self.evaluation_date, '%Y-%m-%d')).days)
+        self.sigma = gatherer.historical_volatility
+        self.alpha = 0.1
+        self.lamda = 1 # If lambda = 0, we have the traditinal BS case
+        self.delta = 0.04
+        self.y = self.alpha + (self.delta**2)/2
+        self.k = math.exp(self.y)-1
+        self.lambdaprime = self.lamda*(1+self.k)
+
+        self.d1 = (math.log(self.S_0/self.K) + (self.r + (self.sigma**2)/2)*self.T)/(self.sigma*math.sqrt(self.T))
+        self.d2 = self.d1 - self.sigma*math.sqrt(self.T)
+        self.Nd1 = norm.cdf(self.d1, 0, 1)     # N(d1)
+        self.Nd2 = norm.cdf(self.d2, 0, 1)     # N(d2)
+        self.Nmind1 = norm.cdf(-self.d1, 0, 1) # N(-d1)
+        self.Nmind2 = norm.cdf(-self.d2, 0, 1) # N(-d2)
+    
+    def get_call(self):
+   
+        C = self.S_0*self.Nd1 - self.K*self.Nd2*math.e**(-self.r*self.T)
+
+        return C
+
+    def get_put(self):
+
+        P = self.K*self.Nmind2*math.e**(-self.r*self.T) - self.S_0*self.Nmind1
+
+        return P
+    def get_MertonLognormalJumpCall(self):
+        Fpoisson= 0
+        i = 0
+        s=0
+        while Fpoisson< 0.99: #0.99 is arbitrary, the closer to 1, the better, but it becomes computationally expensive
+            ''' I calculate the probability that the number of jumps = i, then sigma_n and r_n, and put
+            them in the Black and Scholes formula and I get the sum of P(N=i)*(BSCall) from 0 to
+            a large enough number'''
+            fpoisson = (self.lambdaprime*self.T)**i*(math.e**(self.lambdaprime*self.T))/math.factorial(i)
+            Fpoisson += fpoisson
+            r_n = self.r -self.lamda*self.k + i*self.y/self.T
+            sigma_n = math.sqrt(self.sigma**2 + i*(self.delta**2)/self.T)
+            d1_n = (math.log(self.S_0/self.K) + (r_n + (sigma_n**2)/2)*self.T)/(sigma_n*math.sqrt(self.T))
+            d2_n = self.d1 - sigma_n*math.sqrt(self.T)
+            Nd1_n = norm.cdf(d1_n, 0, 1)     #N(d1_n)
+            Nd2_n = norm.cdf(d2_n, 0, 1)     # N(d2_n)
+            cn = self.S_0*Nd1_n - self.K*Nd2_n*math.e**(-r_n*self.T)
+            s += cn*fpoisson
+        return s
+    def get_MertonLognormalJumpPut(self):
+        Fpoisson= 0
+        i = 0
+        s=0
+        while Fpoisson< 0.99: #0.99 is arbitrary, the closer to 1, the better, but it becomes computationally expensive
+            ''' I calculate the probability that the number of jumps = i, then sigma_n and r_n, and put
+            them in the Black and Scholes formula and I get the sum of P(N=i)*(BSCall) from 0 to
+            a large enough number'''
+            fpoisson = (self.lambdaprime*self.T)**i*(math.e**(self.lambdaprime*self.T))/math.factorial(i)
+            Fpoisson += fpoisson
+            r_n = self.r -self.lamda*self.k + i*self.y/self.T
+            sigma_n = math.sqrt(self.sigma**2 + i*(self.delta**2)/self.T)
+            d1_n = (math.log(self.S_0/self.K) + (r_n + (sigma_n**2)/2)*self.T)/(sigma_n*math.sqrt(self.T))
+            d2_n = self.d1 - sigma_n*math.sqrt(self.T)
+            Nmind1_n = norm.cdf(-d1_n, 0, 1) # N(-d1_n)
+            Nmind2_n = norm.cdf(-d2_n, 0, 1) # N(-d2_n)
+            p_n = self.K*Nmind2_n*math.e**(-r_n*self.T) - self.S_0*Nmind1_n
+            s += p_n*fpoisson
+        return s
+    
+
+if __name__ == '__main__': 
+
+    
+    black_scholes_pricer = OptionPricingBlackScholesMerton('AAPL', 'call', '2023-04-21', '2023-04-10')
+    call = black_scholes_pricer.get_call()
+    merton_log_call = black_scholes_pricer.get_MertonLognormalJumpCall()
+    put = black_scholes_pricer.get_put()
+    merton_log_put = black_scholes_pricer.get_MertonLognormalJumpPut()
+    print(call)
+    print(merton_log_call) # should be greater or equal to the BS call
+    print(put)
+    print(merton_log_put) # Should be greater or equal to the BS Put
+    #Double check values with https://demonstrations.wolfram.com/OptionPricesInMertonsJumpDiffusionModel/

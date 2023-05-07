@@ -52,7 +52,7 @@ class OptionPricingBlackScholesMerton():
         Fpoisson= 0
         i = 0
         s=0
-        while Fpoisson< 0.99: #0.99 is arbitrary, the closer to 1, the better, but it becomes computationally expensive
+        while Fpoisson< 0.999: #0.999 is arbitrary, the closer to 1, the better, but it becomes computationally expensive
             ''' I calculate the probability that the number of jumps = i, then sigma_n and r_n, and put
             them in the Black and Scholes formula and I get the sum of P(N=i)*(BSCall) from 0 to
             a large enough number'''
@@ -71,7 +71,7 @@ class OptionPricingBlackScholesMerton():
         Fpoisson= 0
         i = 0
         s=0
-        while Fpoisson< 0.99: #0.99 is arbitrary, the closer to 1, the better, but it becomes computationally expensive
+        while Fpoisson< 0.999: #0.999 is arbitrary, the closer to 1, the better, but it becomes computationally expensive
             ''' I calculate the probability that the number of jumps = i, then sigma_n and r_n, and put
             them in the Black and Scholes formula and I get the sum of P(N=i)*(BSCall) from 0 to
             a large enough number'''

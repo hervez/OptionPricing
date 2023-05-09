@@ -124,12 +124,22 @@ class OptionPricingBlackScholesMerton():
     # Here lie the functions that produce an output depending on what type of Fourier-priced option is called
     def get_call_usingFourier(self, cf):
               return self.S_0*self.delta_option(cf) - self.prob2(cf)*self.K*math.exp(-self.r*self.T)
+    def Put_parity_fourier(self, cf): #searching the price of the put given S_0, K and the call price computed using Fourier
+        c = self.get_call_usingFourier(cf)
+        p = c + self.K*np.exp(-self.r*self.T) - self.S_0
+        return p
     def get_Call_BS_Fourier(self):
               c = self.get_call_usingFourier(self.Brownian_Motion_cf)
               return c
+    def get_Put_BS_Fourier(self):
+        put = self.Put_parity_fourier(self.Brownian_Motion_cf)
+        return put
     def get_Call_Heston_Fourier(self):
         c = self.get_call_usingFourier(self.Modified_Heston_cf)
         return c
+    def get_Put_Heston_Fourier(self):
+        put = self.Put_partiy_fourier(self.Modified_Heston_cf)
+        return put
     
 
 if __name__ == '__main__': 
@@ -145,3 +155,7 @@ if __name__ == '__main__':
     print(put)
     print(merton_log_put) # Should be greater or equal to the BS Put
     #Double check values with https://demonstrations.wolfram.com/OptionPricesInMertonsJumpDiffusionModel/
+    call_BS_Fourier = black_scholes_pricer.get_Call_BS_Fourier()
+    put_BS_Fourier = black_scholes_pricer.get_Put_BS_Fourier()
+    call_Heston_Fourier = black_scholes_pricer.get_Call_Heston_Fourier()
+    put_Heston_Fourier = black_scholes_pricer.get_Put_Heston_Fourier()

@@ -33,6 +33,8 @@ class OptionPricingBlackScholesMerton():
         self.Nmind1 = norm.cdf(-self.d1, 0, 1) # N(-d1)
         self.Nmind2 = norm.cdf(-self.d2, 0, 1) # N(-d2)
         #For Merton :
+        self.rMerton = 0.1
+        self.sigmaMerton = 0.1
         self.alpha = 0.1
         self.lamda = 1 # If lambda = 0, we have the traditinal BS case
         self.delta = 0.04
@@ -43,6 +45,8 @@ class OptionPricingBlackScholesMerton():
         self.mu = self.r - 0.5 * (self.sigma**2)*self.T
         self.vol = self.sigma*math.sqrt(self.T)
         # Heston 
+        self.rHeston = 0.05
+        self.sigmaHeston = 0.1
         self.rho = -0.8
         self.kappa = 3
         self.eta = 0.1
@@ -69,8 +73,8 @@ class OptionPricingBlackScholesMerton():
             a large enough number'''
             fpoisson = (self.lambdaprime*self.T)**i*(math.e**(-self.lambdaprime*self.T))/math.factorial(i)
             Fpoisson += fpoisson
-            r_n = self.r -self.lamda*self.k + i*self.y/self.T
-            sigma_n = math.sqrt(self.sigma**2 + i*(self.delta**2)/self.T)
+            r_n = self.rMerton -self.lamda*self.k + i*self.y/self.T
+            sigma_n = math.sqrt(self.sigmaMerton**2 + i*(self.delta**2)/self.T)
             d1_n = (math.log(self.S_0/self.K) + (r_n + (sigma_n**2)/2)*self.T)/(sigma_n*math.sqrt(self.T))
             d2_n = d1_n - sigma_n*math.sqrt(self.T)
             Nd1_n = norm.cdf(d1_n, 0, 1)     #N(d1_n)
@@ -88,8 +92,8 @@ class OptionPricingBlackScholesMerton():
             a large enough number'''
             fpoisson = (self.lambdaprime*self.T)**i*(math.e**(-self.lambdaprime*self.T))/math.factorial(i)
             Fpoisson += fpoisson
-            r_n = self.r -self.lamda*self.k + i*self.y/self.T
-            sigma_n = math.sqrt(self.sigma**2 + i*(self.delta**2)/self.T)
+            r_n = self.rMerton -self.lamda*self.k + i*self.y/self.T
+            sigma_n = math.sqrt(self.sigmaMerton**2 + i*(self.delta**2)/self.T)
             d1_n = (math.log(self.S_0/self.K) + (r_n + (sigma_n**2)/2)*self.T)/(sigma_n*math.sqrt(self.T))
             d2_n = d1_n - sigma_n*math.sqrt(self.T)
             Nmind1_n = norm.cdf(-d1_n, 0, 1) # N(-d1_n)
@@ -104,9 +108,9 @@ class OptionPricingBlackScholesMerton():
         d =  np.sqrt((self.rho*self.theta*u*1j-self.kappa)**2 - self.theta**2*(-1j*u-u**2))
         b =  self.kappa-self.rho*self.theta*u*1j
         g = (b - d)/(b + d)
-        e1 =  np.exp(1j*u*(np.log(self.S_0) + self.r*self.T))
-        e2 =  np.exp(self.eta*self.kappa*self.sigma**(-2)*((b-d)*self.T - 2*np.log((1-g*np.exp(-d*self.T))/(1-g))))
-        e3 =  np.exp(self.sigma**2*self.theta**(-2)*((b-d)*(1-np.exp(-d*self.T))/(1-g*np.exp(-d*self.T))))
+        e1 =  np.exp(1j*u*(np.log(self.S_0) + self.rHeston*self.T))
+        e2 =  np.exp(self.eta*self.kappa*self.sigmaHeston**(-2)*((b-d)*self.T - 2*np.log((1-g*np.exp(-d*self.T))/(1-g))))
+        e3 =  np.exp(self.sigmaHeston**2*self.theta**(-2)*((b-d)*(1-np.exp(-d*self.T))/(1-g*np.exp(-d*self.T))))
         return e1*e2*e3
     # Here lies the semi-analytical method after founding the characteristic function of ln(ST)
     def delta_option(self, cf): #Need to specify characteristic function

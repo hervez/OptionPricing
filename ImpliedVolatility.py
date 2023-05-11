@@ -8,37 +8,12 @@ from scipy.stats import norm
 from datetime import datetime
 
 import DataGathering
-
-
-class OptionData():
-    set_strike_price = set()
-    set_time_to_maturity = set()
-
-    def __init__(self, option_price, underlying_price, strike_price, time_to_maturity, option_type, risk_free_rate):
-        self.option_price = option_price
-        self.underlying_price = underlying_price
-        self.strike_price = strike_price
-        self.time_to_maturity = time_to_maturity
-        self.option_type = option_type
-        self.risk_free_rate = risk_free_rate
-
-        OptionData.set_strike_price.add(strike_price)
-        OptionData.set_time_to_maturity.add(time_to_maturity)
-
-    def __str__(self):
-        string_representation = f"\t Option type: {self.option_type}\
-            \n \t Option price: {self.option_price} \
-            \n \t Underlying price: {self.underlying_price} \
-            \n \t Strike price: {self.strike_price} \
-            \n \t Time to maturity: {self.time_to_maturity}\
-            \n \t Risk free rate: {self.risk_free_rate}"
-
-        return string_representation
+from OptionDataType import OptionData
 
 
 class OptionImpliedVolatility:
 
-    def __init__(self, underlying: str, save_data: bool = True):
+    def __init__(self, underlying: str):
         self.underlying = underlying
         self.gatherer = DataGathering.OptionDataGathering(verbose=False)
         self.option_data = self.get_options_data()
@@ -120,12 +95,6 @@ class ImpliedVolatilitySurfaceComputer:
         """
         Calculates the implied volatility surface using the option data
         """
-
-        # Initialize arrays for the strikes, maturities, and implied volatilities
-        # strikes = np.array(list(self.option_data[0].set_strike_price))
-        # maturities = np.array(list(self.option_data[0].set_time_to_maturity))
-        # implied_vols = np.empty((len(strikes), len(maturities)))
-        # implied_vols[:] = np.nan
         strikes = []
         maturities = []
         implied_vols = []
@@ -141,24 +110,10 @@ class ImpliedVolatilitySurfaceComputer:
             strikes.append(option.strike_price)
             maturities.append(option.time_to_maturity)
             implied_vols.append(implied_volatility)
-            # Store the implied volatility in the matrix
-            # j = np.where(strikes == option.strike_price)[0][0]
-            # k = np.where(maturities == option.time_to_maturity)[0][0]
-            # implied_vols[j, k] = implied_volatility
+
 
         f_iv = interp2d(strikes, maturities, implied_vols, kind='linear')
-        # print(implied_vols)
-        # strikes_grid = np.linspace(min(strikes), max(strikes))
-        # maturity_grid = np.linspace(min(maturities), max(maturities))
-        # xx, yy = np.meshgrid(strikes_grid, maturity_grid)
-        # iv_surface = griddata((strikes, maturities), implied_vols, (xx, yy), method='linear')
 
-        # x_i = np.unique(strikes)
-        # y_i = np.unique(maturities)
-
-        # f_implied_volatility = interp2d(x_i, y_i, implied_vols.flatten())
-
-        # return f_implied_volatility
 
         return f_iv
 

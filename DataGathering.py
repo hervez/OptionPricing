@@ -16,10 +16,12 @@ class OptionDataGathering():
 
     def __init__(self,
                  save_data: bool = True,
-                 verbose: bool = True):
+                 verbose: bool = True,
+                 reload: bool = False):
 
         self.save_data = save_data
         self.verbose = verbose
+        self.reload = reload
 
         if self.save_data:
             folder_creation('results', self.verbose)
@@ -41,7 +43,9 @@ class OptionDataGathering():
 
         path = './results/{}/{}_data.csv'.format(symbol, symbol)
         try:
-            data = pd.read_csv(path, parse_dates=[0])
+            if self.reload:
+                raise FileNotFoundError("Reloading the data from the web")
+            data = pd.read_csv(path, parse_dates=[0], index_col=False)
             data['Date'] = pd.to_datetime(data['Date'], errors='coerce', utc=True)
             data = data.dropna(subset=['Date'])
             data['Date'] = data['Date'].dt.date
@@ -52,12 +56,14 @@ class OptionDataGathering():
             data['Return'] = data['Close'].pct_change()
             data['Log_return'] = np.log(data['Close']) - np.log(data['Close'].shift(1))
             data['Date'] = pd.to_datetime(data.index, errors='coerce', utc=True)
+            # data['Date'] = pd.to_datetime(data['Date'], errors='coerce', utc=True)
             data = data.dropna(subset=['Date'])
             data['Date'] = data['Date'].dt.date
+            data.reset_index(inplace=True, drop=True)
             if self.verbose:
                 print('{} data downloaded from the web.'.format(symbol))
             if self.save_data:
-                data.to_csv(path)
+                data.to_csv(path, index=False)
                 if self.verbose:
                     print('Data saved under {}'.format(path))
 
@@ -101,6 +107,8 @@ class OptionDataGathering():
         file_path = './results/{}/{}_{}'.format(symbol, option_type, expiration_date)
 
         try:
+            if self.reload:
+                raise FileNotFoundError("Reloading the data from the web")
             data = pd.read_csv(file_path)
             if self.verbose:
                 print('Options data recovered from: ' + file_path)
@@ -120,6 +128,8 @@ class OptionDataGathering():
 
         path = './results/^IRX/INT_^IRX_data.csv'
         try:
+            if self.reload:
+                raise FileNotFoundError("Reloading the data from the web")
             data = pd.read_csv(path, parse_dates=[0])
             data['Date'] = pd.to_datetime(data['Date'], errors='coerce', utc=True)
             data = data.dropna(subset=['Date'])
@@ -148,14 +158,6 @@ class OptionDataGathering():
     def get_risk_free_rate(self, evaluation_date: str):
 
         risk_free_data = self.get_risk_free_rates()
-
-        # def nearest(items, pivot):
-        #     return min(items, key=lambda x: abs(x - pivot))
-
-        # closest_evaluation_date = nearest(risk_free_data['Date'], datetime.strptime(evaluation_date, '%Y-%m-%d').date())
-        # if self.verbose:
-        #     if closest_evaluation_date != datetime.strptime(evaluation_date, '%Y-%m-%d').date():
-        #         print('Warning: the specified date is not in the data for the risk free rate. Instead the date {} was used'.format(closest_evaluation_date))
 
         risk_free_rate_at_evaluation_date = \
             risk_free_data.loc[
@@ -207,19 +209,22 @@ class OptionDataGathering():
             iv = row['impliedVolatility'].values[0]
             return iv
 
-    def time_to_maturity(self, expiration_date):
-        today = datetime.today()
+    def time_to_maturity(self, expiration_date, evaluation_date=None):
+        if evaluation_date == None:
+            evaluation = datetime.today()
+        else:
+            evaluation = datetime.strptime(evaluation_date, "%Y-%m-%d")
         expiration = datetime.strptime(expiration_date, "%Y-%m-%d")
-        difference = expiration - today
+        difference = expiration - evaluation
         return difference.days
 
 
 if __name__ == '__main__':
-    gatherer = OptionDataGathering()
+    gatherer = OptionDataGathering(reload=True)
     # gatherer.get_risk_free_rate('2020-01-01')
-    print(gatherer.get_implied_volatility('AAPL', 100, '2023-07-21' , 'call'))
+    # print(gatherer.get_implied_volatility('AAPL', 100, '2023-07-21' , 'call'))
     # print(gatherer.get_option_data('AAPL', 'call', '2022-04-21'))
-    # gatherer.get_underlying_value_at_evaluation_date('AAPL', '2023-04-10')
+    gatherer.get_underlying_value_at_evaluation_date('AAPL', '2023-04-10')
     # gatherer.get_historical_volatilities('AAPL')
     # print(gatherer.get_historical_volatility('AAPL', '2023-04-10'))
     # print(gatherer.get_risk_free_rate('2023-04-10'))

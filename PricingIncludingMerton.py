@@ -11,22 +11,27 @@ from DataGathering import OptionDataGathering
 
 class OptionPricingBlackScholesMerton(): 
 
-    def __init__(self, underlying: str, expiration_date: str, evaluation_date: str, strike: int):
+    def __init__(self, S_0: float, K: float, T: int, r: float, sigma: float):
 
-        self.underlying = underlying 
+        #self.underlying = underlying
         # self.option_type = option_type
-        self.expiration_date = expiration_date 
-        self.evaluation_date = evaluation_date
+        #self.expiration_date = expiration_date
+        #self.evaluation_date = evaluation_date
 
-        gatherer = OptionDataGathering(verbose=False)
+        #gatherer = OptionDataGathering(verbose=False)
 
-        self.S_0 = gatherer.get_underlying_value_at_evaluation_date(self.underlying, self.evaluation_date)
-        self.r = gatherer.get_risk_free_rate(self.evaluation_date)
-        self.K = strike
-        self.T = int((datetime.strptime(self.expiration_date, '%Y-%m-%d') - datetime.strptime(self.evaluation_date, '%Y-%m-%d')).days)
-        self.sigma = gatherer.get_historical_volatility(self.underlying, self.evaluation_date) # Historical volx
-        # self.sigma = gatherer.get_implied_volatility(self.underlying, self.strike, self.expiration_date) # Implied vol
-        #For BS:
+        #self.S_0 = gatherer.get_underlying_value_at_evaluation_date(self.underlying, self.evaluation_date)
+        #self.r = gatherer.get_risk_free_rate(self.evaluation_date)
+        #self.K = strike
+        #self.T = int((datetime.strptime(self.expiration_date, '%Y-%m-%d') - datetime.strptime(self.evaluation_date, '%Y-%m-%d')).days)
+        #self.sigma = gatherer.get_historical_volatility(self.underlying, self.evaluation_date) # Historical volx
+        self.S_0 = S_0
+        self.r = r
+        self.K = K
+        self.T = T
+        self.sigma = sigma
+
+       #For BS:
         self.d1 = (math.log(self.S_0/self.K) + (self.r + (self.sigma**2)/2)*self.T)/(self.sigma*math.sqrt(self.T))
         self.d2 = self.d1 - self.sigma*math.sqrt(self.T)
         self.Nd1 = norm.cdf(self.d1, 0, 1)     # N(d1)

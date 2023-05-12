@@ -163,7 +163,7 @@ class OptionDataGathering():
             risk_free_data.loc[
                 risk_free_data['Date'] == datetime.strptime(evaluation_date, '%Y-%m-%d').date(), 'Close'].iloc[0]
 
-        return risk_free_rate_at_evaluation_date / 100
+        return risk_free_rate_at_evaluation_date / 365
 
     def get_historical_volatilities(self, symbol: str):
         """ Return the historical volatility of the price of the undelrying at the close """

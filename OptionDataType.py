@@ -1,3 +1,6 @@
+import math
+
+
 class OptionData():
     #set_strike_price = set()
     #set_time_to_maturity = set()
@@ -30,6 +33,7 @@ class OptionData():
         self.underlying = underlying
         self.estimated_implied_vol = estimated_implied_vol
         self.historical_volatility = historical_volatility
+        # self.historical_std = math.sqrt(historical_volatility)
         self.BS_pricing = BS_pricing
         self.BSM_pricing = BSM_pricing
         self.Houston_pricing = Houston_pricing

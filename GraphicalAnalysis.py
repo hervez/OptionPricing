@@ -11,10 +11,11 @@ import seaborn as sns
 
 class OptionGraphicalAnalysis():
 
-    def __init__(self, underlying: str):
+    def __init__(self, underlying: str, save_fig: bool = False):
 
        self.underlying = underlying
        self.directory =   f"./results/{self.underlying}/analysis/figures/"
+       self.save_fig = save_fig
        sns.set_theme()
 
     def plot_price_strikes(self, option_list):
@@ -22,15 +23,17 @@ class OptionGraphicalAnalysis():
         directory = f"./results/{self.underlying}/analysis/figures"
         if not os.path.exists(directory):
             os.makedirs(directory)
-        file_path = self.directory + "figure_price_strike.pgf"
+        option_type = option_list[0].option_type
+        file_path = self.directory + f"figure_price_strike_{option_type}.pgf"
 
         prices = []
         strikes = []
         estimated_BS_price = []
         for option in option_list:
-            prices.append(option.option_price)
-            strikes.append(option.strike_price)
-            estimated_BS_price.append(option.BS_pricing)
+            if option.option_type == option_type:
+                prices.append(option.option_price)
+                strikes.append(option.strike_price)
+                estimated_BS_price.append(option.BS_pricing)
 
         # Create the figure and axes objects
         fig, ax = plt.subplots()
@@ -43,15 +46,14 @@ class OptionGraphicalAnalysis():
         sns.scatterplot(x=strikes, y=estimated_BS_price, ax=ax, label='Estimated Price')
 
         # Set the title and axis labels
-        ax.set_title('True vs. Estimated Option Prices')
+        ax.set_title(f'True vs. Estimated {option_type.capitalize()} Prices')
         ax.set_xlabel('Strike Price')
         ax.set_ylabel('Option Price')
 
-        # Show the plot
-        plt.show()
-
-        #plt.savefig(file_path)
-        # plt.show()
+        if self.save_fig:
+            plt.savefig(file_path)
+        else:
+            plt.show()
 
     def plot_implied_volatility_3D(self, option_list: List[OptionData]):
 

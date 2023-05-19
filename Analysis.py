@@ -4,7 +4,7 @@ from typing import List
 from OptionDataType import OptionData
 from DataGathering import OptionDataGathering
 from ImpliedVolatility import OptionImpliedVolatility
-from PricingIncludingMerton import OptionPricingBlackScholesMerton
+from Pricing import *
 from GraphicalAnalysis import OptionGraphicalAnalysis
 from TexDocumentCreator import TexDocument
 
@@ -12,7 +12,7 @@ from TexDocumentCreator import TexDocument
 class OptionAnalysis():
 
     def __init__(self, underlying: str = 'AAPL', expiration_date: str = '2023-04-21',
-                 evaluation_date: str = datetime.datetime.today().strftime('%Y-%m-%d')):
+                 evaluation_date: str = datetime.today().strftime('%Y-%m-%d')):
         self.underlying = underlying
         self.expiration_date = expiration_date
         self.gatherer = OptionDataGathering(verbose=False, reload=True)
@@ -56,9 +56,21 @@ class OptionAnalysis():
 
     def price_option(self, options_list: List[OptionData]):
         for option in options_list:
-            pricer = OptionPricingBlackScholesMerton(S_0=option.underlying_price, K=option.strike_price,
+            pricer = OptionPricingBlackScholes(S_0=option.underlying_price, K=option.strike_price,
                                                      T=option.time_to_maturity, r=option.risk_free_rate,
                                                      sigma=option.implied_volatility)
+            if option.option_type == 'call':
+                option.BS_pricing = pricer.get_call()
+            if option.option_type == 'put':
+                option.BS_pricing = pricer.get_put()
+
+        return options_list
+
+    def pricing_test(self, options_list):
+        for option in options_list:
+            pricer = OptionPricerCRR(S_0=option.underlying_price, K=option.strike_price,
+                                               T=option.time_to_maturity, r=option.risk_free_rate,
+                                               sigma=option.implied_volatility, M=100)
             if option.option_type == 'call':
                 option.BS_pricing = pricer.get_call()
             if option.option_type == 'put':
@@ -69,7 +81,7 @@ class OptionAnalysis():
     def plot(self, option_list: List[OptionData]):
 
         path = "./results/" + self.underlying
-        self.ploter.plot_price_strikes(option_list)
+        self.ploter.plot_price_strikes(option_list=option_list)
 
     def plot_iv(self, option_list: List[OptionData]):
 
@@ -84,13 +96,14 @@ class OptionAnalysis():
         texer.generate_document()
 
 if __name__ == "__main__":
-    analyser = OptionAnalysis(expiration_date='2023-05-19', evaluation_date='2023-05-11')
+    analyser = OptionAnalysis(expiration_date='2023-06-23', evaluation_date='2023-05-19')
     # print(analyser.underlying)time_to_maturity
     options = analyser.get_options()
-    options_iv = analyser.estimate_implied_volatility(options)
-    priced_options = analyser.price_option(options)
-    #for option in options_iv:
-    #    print(option)
-    #analyser.plot(priced_options)
-    analyser.plot_iv(options_iv)
+    # options_iv = analyser.estimate_implied_volatility(options)
+    priced_options = analyser.pricing_test(options)
+    print(priced_options[5])
+    #for option in priced_options:
+    #   print(option)
+    analyser.plot(priced_options)
+    # analyser.plot_iv(options_iv)
     # analyser.TexDocument()

@@ -18,6 +18,7 @@ class OptionData():
                  estimated_implied_vol = None,
                  historical_volatility = None,
                  BS_pricing = None,
+                 CRR_pricing = None,
                  BSM_pricing = None,
                  Houston_pricing = None
                  ):
@@ -35,6 +36,7 @@ class OptionData():
         self.historical_volatility = historical_volatility
         # self.historical_std = math.sqrt(historical_volatility)
         self.BS_pricing = BS_pricing
+        self.CRR_pricing = CRR_pricing
         self.BSM_pricing = BSM_pricing
         self.Houston_pricing = Houston_pricing
         # OptionData.set_strike_price.add(strike_price)

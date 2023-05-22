@@ -20,7 +20,7 @@ class OptionData():
                  BS_pricing = None,
                  CRR_pricing = None,
                  BSM_pricing = None,
-                 Houston_pricing = None
+                 Fourier_pricing = None
                  ):
         self.option_price = option_price
         self.underlying_price = underlying_price
@@ -38,7 +38,7 @@ class OptionData():
         self.BS_pricing = BS_pricing
         self.CRR_pricing = CRR_pricing
         self.BSM_pricing = BSM_pricing
-        self.Houston_pricing = Houston_pricing
+        self.Fourier_pricing = Fourier_pricing
         # OptionData.set_strike_price.add(strike_price)
         # OptionData.set_time_to_maturity.add(time_to_maturity)
 
@@ -49,8 +49,9 @@ class OptionData():
             \n \t Expiration date: {self.expiration_date}\
             \n \t Option price: {self.option_price} \
             \n \t BS pricing: {self.BS_pricing}\
+            \n \t CRR pricing: {self.CRR_pricing}\
             \n \t BSM pricing: {self.BSM_pricing}\
-            \n \t Huston pricing: {self.Houston_pricing}\
+            \n \t Huston pricing: {self.Fourier_pricing}\
             \n \t Underlying price: {self.underlying_price} \
             \n \t Strike price: {self.strike_price} \
             \n \t Time to maturity: {self.time_to_maturity}\

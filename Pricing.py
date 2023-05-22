@@ -28,7 +28,7 @@ class OptionPricer(ABC):
         pass
 
 
-class OptionPricingBlackScholes(OptionPricer):
+class OptionPricerBlackScholes(OptionPricer):
 
     def __init__(self, S_0: float, K: float, T: int, r: float, sigma: float):
 
@@ -86,7 +86,7 @@ class OptionPricerCRR(OptionPricer):
         for t in range(self.M-1, -1, -1):
             V[0:self.M - z, t] = (self.q * V[0:self.M - z, t + 1] + (1 - self.q) * V[1:self.M - z + 1, t+1]) * self.df
             z += 1
-        print(V[0,0])
+        #print(V[0,0])
 
         return V[0, 0]
 
@@ -96,13 +96,13 @@ class OptionPricerCRR(OptionPricer):
 
         z = 0
         for t in range(self.M - 1, -1, -1):
-            V[0:self.M - z, t] = (self.q * V[0:self.M - z] + (1 - self.q) * V[1:self.M - z + 1, t + 1]) * self.df
+            V[0:self.M - z, t] = (self.q * V[0:self.M - z, t + 1] + (1 - self.q) * V[1:self.M - z + 1, t + 1]) * self.df
             z += 1
 
         return V[0, 0]
 
 
-class OptionPricingMerton(OptionPricer):
+class OptionPricerMerton(OptionPricer):
 
     def __init__(self, S_0: float, K: float, T: int, r: float, sigma: float):
 
@@ -156,7 +156,7 @@ class OptionPricingMerton(OptionPricer):
         return s
 
 
-class OptionPricingFourierPricing(OptionPricer):
+class OptionPricerFourierPricing(OptionPricer):
     # Here lie the characteristic functions:
 
     def __init__(self, S_0: float, K: float, T: int, r: float, sigma: float):
@@ -185,16 +185,16 @@ class OptionPricingFourierPricing(OptionPricer):
         return 1 / 2 + F[0] / math.pi
 
     # Here lie the functions that produce an output depending on what type of Fourier-priced option is called
-    def get_call_usingFourier(self, cf):
+    def get_call(self, cf):
         return self.S_0 * self.delta_option(cf) - self.prob2(cf) * self.K * math.exp(-self.r * self.T)
 
-    def get_Call_BS_Fourier(self):
+    def get_Call(self):
         c = self.get_call_usingFourier(self.Brownian_Motion_cf)
         return c
 
 
 if __name__ == '__main__':
-    #black_scholes_pricer = OptionPricingBlackScholes('AAPL', 'call', '2023-04-21', '2023-04-10', 100)
+    #black_scholes_pricer = OptionPricerlackScholes('AAPL', 'call', '2023-04-21', '2023-04-10', 100)
     pricer_CRR = OptionPricerCRR(S_0=175, K=145, T=35, r=0.014, sigma=0.442, M=350 )
     pricer_CRR.get_call()
     #call = black_scholes_pricer.get_call()

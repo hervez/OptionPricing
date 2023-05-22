@@ -15,25 +15,30 @@ class OptionGraphicalAnalysis():
 
        self.underlying = underlying
        self.directory =   f"./results/{self.underlying}/analysis/figures/"
-       self.save_fig = save_fig
        sns.set_theme()
 
-    def plot_price_strikes(self, option_list):
+    def plot_price_strikes(self, option_list, save_fig):
 
         directory = f"./results/{self.underlying}/analysis/figures"
         if not os.path.exists(directory):
             os.makedirs(directory)
         option_type = option_list[0].option_type
-        file_path = self.directory + f"figure_price_strike_{option_type}.pgf"
+        file_path = self.directory + f"figure_price_strike_{option_type}.png"
 
         prices = []
         strikes = []
         estimated_BS_price = []
+        estimated_CRR_price = []
+        #estimated_BSM_price =[]
+        estimated_Fourier_price = []
         for option in option_list:
             if option.option_type == option_type:
                 prices.append(option.option_price)
                 strikes.append(option.strike_price)
                 estimated_BS_price.append(option.BS_pricing)
+                estimated_CRR_price.append(option.CRR_pricing)
+                #estimated_BSM_price.append(option.BSM_pricing)
+                estimated_Fourier_price.append(option.Fourier_pricing)
 
         # Create the figure and axes objects
         fig, ax = plt.subplots()
@@ -42,15 +47,18 @@ class OptionGraphicalAnalysis():
         sns.lineplot(x=strikes, y=prices, ax=ax, label='True Price')
         sns.scatterplot(x=strikes, y=prices, ax=ax)
 
-        # Plot the estimated prices as line plot
-        sns.scatterplot(x=strikes, y=estimated_BS_price, ax=ax, label='Estimated Price')
+        # Plot the estimated prices as scatter plots
+        sns.scatterplot(x=strikes, y=estimated_BS_price, ax=ax, label='BS estimated Price')
+        sns.scatterplot(x=strikes, y=estimated_CRR_price, ax=ax, label='CRR estimated Price')
+        #sns.scatterplot(x=strikes, y=estimated_BSM_price, ax=ax, label='BSM estimated Price')
+        sns.scatterplot(x=strikes, y=estimated_Fourier_price, ax=ax, label='Fourier estimated Price')
 
         # Set the title and axis labels
         ax.set_title(f'True vs. Estimated {option_type.capitalize()} Prices')
         ax.set_xlabel('Strike Price')
         ax.set_ylabel('Option Price')
 
-        if self.save_fig:
+        if save_fig:
             plt.savefig(file_path)
         else:
             plt.show()

@@ -14,7 +14,7 @@ class Calibrate:
     def BScalibrate(self):
         mean = np.mean(self.sample)
         vol = np.std(self.sample)
-        return mean,vol
+        return mean,vol #Please use only vol in BSPricing, the mean is useless after we calibrated
     def normalpdf(self, x, mean, vol):
         return (1 / (vol * np.sqrt(2 * np.pi))) * np.exp(-(x - mean) ** 2 / (2 * vol ** 2))
     def Mertonpdf(self, variables, x): #"works only for t =1!!!"
@@ -44,7 +44,7 @@ class Calibrate:
         result = scipy.optimize.minimize(self.ObjectiveMerton, initial_guess, method='L-BFGS-B', bounds=bounds)
         optimized_variables = result.x
         print(optimized_variables)
-        return optimized_variables
+        return optimized_variables # WILL RETURN alpha, lamda, delta, mu, sigma. we don't need mu, the rest is useful
     def plotBS(self):
         mean, vol = self.BScalibrate()
         x = np.linspace(np.min(self.sample), np.max(self.sample), 100)

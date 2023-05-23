@@ -69,7 +69,7 @@ ex = Calibrate(sample)
 ex.plotBS()
 samplesize = 2520
 sample = np.random.normal(loc=0.7, scale=0.3, size=samplesize)
-for i in range(0,252):
+for i in range(0,2520):
     jumpoccurence = np.random.poisson(lam = 1)
     sum=0
     for i in range(0,jumpoccurence):

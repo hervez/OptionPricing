@@ -29,7 +29,7 @@ class OptionGraphicalAnalysis():
         strikes = []
         estimated_BS_price = []
         estimated_CRR_price = []
-        #estimated_BSM_price =[]
+        estimated_BSM_price =[]
         estimated_Fourier_price = []
         for option in option_list:
             if option.option_type == option_type:
@@ -37,7 +37,7 @@ class OptionGraphicalAnalysis():
                 strikes.append(option.strike_price)
                 estimated_BS_price.append(option.BS_pricing)
                 estimated_CRR_price.append(option.CRR_pricing)
-                #estimated_BSM_price.append(option.BSM_pricing)
+                estimated_BSM_price.append(option.BSM_pricing)
                 estimated_Fourier_price.append(option.Fourier_pricing)
 
         # Create the figure and axes objects
@@ -50,7 +50,7 @@ class OptionGraphicalAnalysis():
         # Plot the estimated prices as scatter plots
         sns.scatterplot(x=strikes, y=estimated_BS_price, ax=ax, label='BS estimated Price')
         sns.scatterplot(x=strikes, y=estimated_CRR_price, ax=ax, label='CRR estimated Price')
-        #sns.scatterplot(x=strikes, y=estimated_BSM_price, ax=ax, label='BSM estimated Price')
+        sns.scatterplot(x=strikes, y=estimated_BSM_price, ax=ax, label='BSM estimated Price')
         sns.scatterplot(x=strikes, y=estimated_Fourier_price, ax=ax, label='Fourier estimated Price')
 
         # Set the title and axis labels

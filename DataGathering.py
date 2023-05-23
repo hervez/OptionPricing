@@ -1,11 +1,12 @@
+import sys
+
 import numpy
 import yfinance as yf
-from datetime import datetime
+from datetime import datetime, timedelta
 import os.path
 import re
 import pandas as pd
 from Utils import *
-from datetime import datetime
 import numpy as np
 
 import ImpliedVolatility
@@ -22,6 +23,7 @@ class OptionDataGathering():
         self.save_data = save_data
         self.verbose = verbose
         self.reload = reload
+        self.closest_evaluation_date = None # Used if the input date is not valid.
 
         if self.save_data:
             folder_creation('results', self.verbose)
@@ -72,9 +74,35 @@ class OptionDataGathering():
     def get_underlying_value_at_evaluation_date(self, symbol: str, evaluation_date: str):
 
         underlying_data = self.get_underlying_data(symbol)
-        underlying_value_at_evaluation_date = \
-            underlying_data.loc[
-                underlying_data['Date'] == datetime.strptime(evaluation_date, '%Y-%m-%d').date(), 'Close'].iloc[0]
+        evaluation_datetime = datetime.strptime(evaluation_date, '%Y-%m-%d').date()
+        try:
+            underlying_value_at_evaluation_date = \
+                underlying_data.loc[
+                    underlying_data['Date'] == evaluation_datetime, 'Close'].iloc[0]
+        except IndexError:
+            print("Error: the evaluation date you gave is not in the database. Make sure that it is a valid date for faster runtime. Here are the last available date:")
+            print(underlying_data['Date'].tail(5))
+            if underlying_data['Date'].iloc[-1] < evaluation_datetime:
+                underlying_value_at_evaluation_date = underlying_data['Close'].iloc[-1]
+                self.closest_evaluation_date = underlying_data['Date'].iloc[-1]
+                print(f"The date you used is not yet in the date base. Last date available used: {self.closest_evaluation_date}")
+            elif (underlying_data['Date'].iloc[-1] > evaluation_datetime) and (underlying_data['Date'].iloc[0] < evaluation_datetime):
+                previous_day = datetime.strptime(evaluation_date, '%Y-%m-%d').date() - timedelta(days=1)
+                while True:
+                    try:
+                        underlying_value_at_evaluation_date = \
+                            underlying_data.loc[
+                                underlying_data['Date'] == previous_day, 'Close'].iloc[0]
+                        print(f"The date you used is not in the database. Closest date used instead: {previous_day}")
+                        self.closest_evaluation_date = previous_day
+                        break
+                    except IndexError:
+                        previous_day = previous_day - timedelta(days=1)
+                        continue
+            else:
+                underlying_value_at_evaluation_date = underlying_data['Close'].iloc[0]
+                self.closest_evaluation_date = underlying_data['Date'].iloc[0]
+                print(f"The date you used is too early to be in the database. First available date used: {self.closest_evaluation_date}")
 
         return underlying_value_at_evaluation_date
 
@@ -158,10 +186,33 @@ class OptionDataGathering():
     def get_risk_free_rate(self, evaluation_date: str):
 
         risk_free_data = self.get_risk_free_rates()
+        evaluation_datetime = datetime.strptime(evaluation_date, '%Y-%m-%d').date()
 
-        risk_free_rate_at_evaluation_date = \
-            risk_free_data.loc[
-                risk_free_data['Date'] == datetime.strptime(evaluation_date, '%Y-%m-%d').date(), 'Close'].iloc[0]
+        try:
+            if self.closest_evaluation_date == None:
+                risk_free_rate_at_evaluation_date = \
+                    risk_free_data.loc[
+                        risk_free_data['Date'] == evaluation_datetime, 'Close'].iloc[0]
+            else:
+                risk_free_rate_at_evaluation_date = \
+                    risk_free_data.loc[
+                        risk_free_data['Date'] == self.closest_evaluation_date, 'Close'].iloc[0]
+        except IndexError:
+            if risk_free_data['Date'].iloc[-1] < evaluation_datetime:
+                risk_free_rate_at_evaluation_date = risk_free_data['Date'].iloc[-1]
+            elif (risk_free_data['Date'].iloc[-1] > evaluation_datetime) and (risk_free_data['Date'].iloc[0] < evaluation_datetime):
+                previous_day = datetime.strptime(evaluation_date, '%Y-%m-%d').date() - timedelta(days=1)
+                while True:
+                    try:
+                        risk_free_rate_at_evaluation_date = \
+                            risk_free_data.loc[
+                                risk_free_data['Date'] == previous_day, 'Close'].iloc[0]
+                        break
+                    except IndexError:
+                        previous_day = previous_day - timedelta(days=1)
+                        continue
+            else:
+                risk_free_rate_at_evaluation_date = risk_free_data['Date'].iloc[0]
 
         return risk_free_rate_at_evaluation_date / 365
 
@@ -171,7 +222,7 @@ class OptionDataGathering():
         underlying_data = self.get_underlying_data(symbol)
         historical_volatilities = pd.DataFrame()
         historical_volatilities['Date'] = underlying_data['Date']
-        historical_volatilities['Vol'] = underlying_data['Close'].rolling(100).std()
+        historical_volatilities['Vol'] = underlying_data['Log_return'].rolling(100).std()
 
         return historical_volatilities
 
@@ -179,9 +230,14 @@ class OptionDataGathering():
         """ Return the historical volatility at the valuation date """
 
         historical_volatilities = self.get_historical_volatilities(symbol)
-        historical_volatility_at_evaluation_date = \
-            historical_volatilities.loc[
-                historical_volatilities['Date'] == datetime.strptime(evaluation_date, '%Y-%m-%d').date(), 'Vol'].iloc[0]
+        if self.closest_evaluation_date == None:
+            historical_volatility_at_evaluation_date = \
+                historical_volatilities.loc[
+                    historical_volatilities['Date'] == datetime.strptime(evaluation_date, '%Y-%m-%d').date(), 'Vol'].iloc[0]
+        else:
+            historical_volatility_at_evaluation_date = \
+                historical_volatilities.loc[
+                    historical_volatilities['Date'] == self.closest_evaluation_date, 'Vol'].iloc[0]
 
         return historical_volatility_at_evaluation_date
 

@@ -1,3 +1,4 @@
+import math
 from typing import List
 
 from OptionDataType import OptionData
@@ -33,6 +34,7 @@ class OptionAnalysis:
                 strike_price=row['strike'],
                 implied_volatility=row['impliedVolatility'],
                 historical_volatility=historical_volatility,
+                historical_std=math.sqrt(historical_volatility),
                 underlying_price=underlying_price,
                 underlying=self.underlying,
                 evaluation_date=self.evaluation_date,
@@ -60,7 +62,7 @@ class OptionAnalysis:
             # BS pricing
             pricer = OptionPricerBlackScholes(S_0=option.underlying_price, K=option.strike_price,
                                                T=option.time_to_maturity, r=option.risk_free_rate,
-                                               sigma=option.implied_volatility)
+                                               sigma=option.historical_std)
             if option.option_type == 'call':
                 option.BS_pricing = pricer.get_call()
             if option.option_type == 'put':
@@ -69,12 +71,28 @@ class OptionAnalysis:
             # CRR pricing
             pricerCRR = OptionPricerCRR(S_0=option.underlying_price, K=option.strike_price,
                                         T=option.time_to_maturity, r=option.risk_free_rate,
-                                        sigma=option.implied_volatility, M=100)
+                                        sigma=option.historical_std, M=10*option.time_to_maturity)
             if option.option_type == 'call':
                 option.CRR_pricing = pricerCRR.get_call()
             if option.option_type == 'put':
                 option.CRR_pricing = pricerCRR.get_put()
 
+            # Fourier pricing
+            pricerFourier = OptionPricerFourier(S_0=option.underlying_price, K=option.strike_price,
+                                                T=option.time_to_maturity, r=option.risk_free_rate,
+                                                sigma=option.historical_std)
+            if option.option_type == 'call':
+                option.Fourier_pricing = pricerFourier.get_call()
+            if option.option_type == 'put':
+                option.Fourier_pricing = pricerFourier.get_put()
+
+            # Fast Fourier Transform pricing
+            pricerFFT = OptionPricerFFT(S_0=option.underlying_price, K=option.strike_price, T=option.time_to_maturity, r=option.risk_free_rate,
+                                                sigma=option.historical_std)
+            if option.option_type == 'call':
+                option.FFT_pricing = pricerFFT.get_call()
+            if option.option_type == 'put':
+                option.FFT_pricing = pricerFFT.get_put()
             # Merton pricing
             #pricerMerton = OptionPricerMerton(S_0=option.underlying_price, K=option.strike_price,
             #                            T=option.time_to_maturity, r=option.risk_free_rate,
@@ -100,13 +118,13 @@ class OptionAnalysis:
     @staticmethod
     def pricing_test(options_list):
         for option in options_list:
-            pricerCRR = OptionPricerCRR(S_0=option.underlying_price, K=option.strike_price,
+            pricer = OptionPricerCRR(S_0=option.underlying_price, K=option.strike_price,
                                      T=option.time_to_maturity, r=option.risk_free_rate,
-                                     sigma=option.implied_volatility, M=100)
+                                     sigma=option.historical_std, M=10*option.time_to_maturity)
             if option.option_type == 'call':
-                option.CRR_pricing = pricerCRR.get_call()
+                option.BS_pricing = pricer.get_call()
             if option.option_type == 'put':
-                option.CRR_pricing = pricerCRR.get_put()
+                option.BS_pricing = pricer.get_put()
 
         return options_list
 
@@ -143,11 +161,12 @@ class OptionAnalysis:
 
 
 if __name__ == "__main__":
-    analyser = OptionAnalysis(expiration_date='2023-06-23', evaluation_date='2023-05-19')
+    analyser = OptionAnalysis(expiration_date='2023-05-26', evaluation_date='2023-05-22')
     #analyser.complete_analysis()
     # print(analyser.underlying)time_to_maturity
     options = analyser.get_options()
     # options_iv = analyser.estimate_implied_volatility(options)
+    #priced_options = analyser.price_option(options)
     priced_options = analyser.price_option(options)
     print(priced_options[5])
     for option in priced_options:

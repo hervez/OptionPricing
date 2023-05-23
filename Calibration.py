@@ -40,7 +40,7 @@ class Calibrate:
         return -sum_diff
     def Mertoncalibrate(self):
         initial_guess = [0, 1, 0.3, 0.7, 0.3] 
-        bounds = [(-10, 10), (0, 3), (1e-10, None), (-10, 10), (1e-10, None)] 
+        bounds = [(None, None), (0, 3), (1e-10, None), (None, None), (1e-10, None)] 
         result = scipy.optimize.minimize(self.ObjectiveMerton, initial_guess, method='L-BFGS-B', bounds=bounds)
         optimized_variables = result.x
         print(optimized_variables)

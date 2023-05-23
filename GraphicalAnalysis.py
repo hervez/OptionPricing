@@ -1,5 +1,4 @@
 from typing import List
-import matplotlib
 import matplotlib.pyplot as plt
 from OptionDataType import OptionData
 import os
@@ -9,27 +8,33 @@ import seaborn as sns
 # matplotlib.use('pgf')
 
 
-class OptionGraphicalAnalysis():
+class OptionGraphicalAnalysis:
+    """
+    Class to create plots of the different results obtained in the code.
+    """
 
-    def __init__(self, underlying: str, save_fig: bool = False):
+    def __init__(self, underlying: str):
+        """
+        Args:
+            underlying: underlying of the option priced. Necessary to save the plot in the correct folder
+        """
 
-       self.underlying = underlying
-       self.directory =   f"./results/{self.underlying}/analysis/figures/"
-       sns.set_theme()
+        self.underlying = underlying
+        self.directory = f"./results/{self.underlying}/analysis/figures/"  # Directory for the LaTex document figures
+        sns.set_theme()  # Set the theme for the graphics
 
     def plot_price_strikes(self, option_list, save_fig):
+        """ Creates a plot of the estimated prices and the real prices for each strike prices """
 
-        directory = f"./results/{self.underlying}/analysis/figures"
-        if not os.path.exists(directory):
-            os.makedirs(directory)
         option_type = option_list[0].option_type
         file_path = self.directory + f"figure_price_strike_{option_type}.png"
 
+        # Gather the data from the option list
         prices = []
         strikes = []
         estimated_BS_price = []
         estimated_CRR_price = []
-        estimated_BSM_price =[]
+        estimated_BSM_price = []
         estimated_Fourier_price = []
         for option in option_list:
             if option.option_type == option_type:
@@ -59,6 +64,9 @@ class OptionGraphicalAnalysis():
         ax.set_ylabel('Option Price')
 
         if save_fig:
+            # Create a directory to save the figures
+            if not os.path.exists(self.directory):
+                os.makedirs(self.directory)
             plt.savefig(file_path)
         else:
             plt.show()
@@ -87,6 +95,9 @@ class OptionGraphicalAnalysis():
         plt.show()
 
     def plot_implied_volatility_2D(self, option_list: List[OptionData]):
+        """ Create a plot of the estimated and Yahoo implied volatility by strike prices """
+
+        # Gather the data from the option list
         estimated_implied_volatility = []
         strike_price = []
         implied_volatility = []

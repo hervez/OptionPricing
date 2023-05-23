@@ -4,8 +4,18 @@ import os
 
 
 class TexDocument:
-
+    """
+    Class to generate the LaTEx document containing the results of the option pricing.
+    WARNING: pdflatex is necessary for the execution of this class.
+    """
     def __init__(self, underlying: str, evaluation_date: str, expiration_date: str, underlying_price: float):
+        """
+        Args:
+            underlying: underlying of the option priced
+            evaluation_date: date of the pricing
+            expiration_date: date at which the options expire
+            underlying_price: price of the underlying at the evaluation date
+        """
 
         self.underlying = underlying
         self.evaluation_date = evaluation_date
@@ -15,6 +25,7 @@ class TexDocument:
 
     def generate_latex_code(self):
         """ Create string containing the latex code"""
+
         title = f"Option pricing for {self.underlying}"
         author = "Option Pricing Project"
 

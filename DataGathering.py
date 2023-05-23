@@ -1,17 +1,13 @@
-import sys
-
-import numpy
 import yfinance as yf
 from datetime import datetime, timedelta
-import os.path
-import re
 import pandas as pd
 from Utils import *
 import numpy as np
 
 import ImpliedVolatility
 
-class OptionDataGathering():
+
+class OptionDataGathering:
     """ Class to gather the information relative to an underlying.
     If save_data is true, the data is automatically saved as a CSV file in the appropriate file structure. """
 
@@ -19,20 +15,27 @@ class OptionDataGathering():
                  save_data: bool = True,
                  verbose: bool = True,
                  reload: bool = False):
+        """
+        Args:
+            save_data: if true, save the data in a CSV in the appropriate file structure a load it from there rather
+            than from the web
+            verbose: if true, provide information from where the data is being gathered
+            reload: re-gather the data from the web. Necessary if the evaluation date is not in the saved data.
+        """
 
         self.save_data = save_data
         self.verbose = verbose
         self.reload = reload
-        self.closest_evaluation_date = None # Used if the input date is not valid.
+        self.closest_evaluation_date = None  # Used if the input evaluation date is not valid.
 
         if self.save_data:
             folder_creation('results', self.verbose)
 
-    def download_underlying_data(self, symbol: str, period: str):
+    @staticmethod
+    def download_underlying_data(symbol: str, period: str):
         """ Download a dataframe containing the historical data of a given stock """
 
         ticker = yf.Ticker(symbol)
-
         underlying_data = ticker.history(period)
 
         return underlying_data
@@ -40,9 +43,11 @@ class OptionDataGathering():
     def get_underlying_data(self, symbol: str, period: str = '10y'):
         """Get the underlying data, either from the web or the locale memory if they have already been queried."""
 
+        # Create a folder to save the data
         if self.save_data:
             folder_creation('results/{}'.format(symbol), self.verbose)
 
+        # Gather the data from the file system or from the web if it is not there
         path = './results/{}/{}_data.csv'.format(symbol, symbol)
         try:
             if self.reload:
@@ -53,12 +58,14 @@ class OptionDataGathering():
             data['Date'] = data['Date'].dt.date
             if self.verbose:
                 print('{} data recovered from: '.format(symbol) + path)
+
         except FileNotFoundError:
             data = self.download_underlying_data(symbol, period)
+
+            # Create additional information columns such as the return, log-return and the date in datetime
             data['Return'] = data['Close'].pct_change()
             data['Log_return'] = np.log(data['Close']) - np.log(data['Close'].shift(1))
             data['Date'] = pd.to_datetime(data.index, errors='coerce', utc=True)
-            # data['Date'] = pd.to_datetime(data['Date'], errors='coerce', utc=True)
             data = data.dropna(subset=['Date'])
             data['Date'] = data['Date'].dt.date
             data.reset_index(inplace=True, drop=True)
@@ -72,21 +79,30 @@ class OptionDataGathering():
         return data
 
     def get_underlying_value_at_evaluation_date(self, symbol: str, evaluation_date: str):
+        """ returns: an asset price given by its symbol at a given evaluation date """
 
+        # Get the asset complete data
         underlying_data = self.get_underlying_data(symbol)
         evaluation_datetime = datetime.strptime(evaluation_date, '%Y-%m-%d').date()
+        # Get the asset price at the given evaluation date or at the closest valid date.
         try:
             underlying_value_at_evaluation_date = \
                 underlying_data.loc[
                     underlying_data['Date'] == evaluation_datetime, 'Close'].iloc[0]
         except IndexError:
-            print("Error: the evaluation date you gave is not in the database. Make sure that it is a valid date for faster runtime. Here are the last available date:")
+            print(
+                "Error: the evaluation date you gave is not in the database. "
+                "Make sure that it is a valid date for faster runtime. "
+                "Here are the last available dates:")
             print(underlying_data['Date'].tail(5))
             if underlying_data['Date'].iloc[-1] < evaluation_datetime:
                 underlying_value_at_evaluation_date = underlying_data['Close'].iloc[-1]
                 self.closest_evaluation_date = underlying_data['Date'].iloc[-1]
-                print(f"The date you used is not yet in the date base. Last date available used: {self.closest_evaluation_date}")
-            elif (underlying_data['Date'].iloc[-1] > evaluation_datetime) and (underlying_data['Date'].iloc[0] < evaluation_datetime):
+                print(
+                    f"The date you used is not yet in the date base. Last date available used: "
+                    f"{self.closest_evaluation_date}")
+            elif (underlying_data['Date'].iloc[-1] > evaluation_datetime) and (
+                    underlying_data['Date'].iloc[0] < evaluation_datetime):
                 previous_day = datetime.strptime(evaluation_date, '%Y-%m-%d').date() - timedelta(days=1)
                 while True:
                     try:
@@ -102,14 +118,16 @@ class OptionDataGathering():
             else:
                 underlying_value_at_evaluation_date = underlying_data['Close'].iloc[0]
                 self.closest_evaluation_date = underlying_data['Date'].iloc[0]
-                print(f"The date you used is too early to be in the database. First available date used: {self.closest_evaluation_date}")
+                print(
+                    f"The date you used is too early to be in the database. First available date used:"
+                    f" {self.closest_evaluation_date}")
 
         return underlying_value_at_evaluation_date
 
-    def download_option_data(self, symbol: str, option_type: str, expiration_date: str):
+    @staticmethod
+    def download_option_data(symbol: str, option_type: str, expiration_date: str):
         """Download the option data using the yfinance library."""
 
-        expiration_datetime = datetime.strptime(expiration_date, '%Y-%m-%d')
         ticker = yf.Ticker(symbol)
         option_chain = ticker.option_chain(expiration_date)
 
@@ -125,15 +143,16 @@ class OptionDataGathering():
     def get_option_data(self, symbol, option_type, expiration_date):
         """Get the option data, either from the web or the locale memory if they have already been queried."""
 
+        # Create the folder to save the data
         if self.save_data:
             folder_creation('results/{}'.format(symbol), self.verbose)
 
-        if option_type == 'call' or option_type == 'put':
-            self.option_type = option_type
-        else:
+        # Check the option type
+        if not option_type == 'call' and not option_type == 'put':
             raise ValueError('Invalid option type. Must be "call" or "put".')
         file_path = './results/{}/{}_{}'.format(symbol, option_type, expiration_date)
 
+        # Load the option data
         try:
             if self.reload:
                 raise FileNotFoundError("Reloading the data from the web")
@@ -184,12 +203,13 @@ class OptionDataGathering():
         return interpolated_risk_free_data
 
     def get_risk_free_rate(self, evaluation_date: str):
+        """ Get the risk-free rate of the 13 weeks treasury bill at a given evaluation date"""
 
         risk_free_data = self.get_risk_free_rates()
         evaluation_datetime = datetime.strptime(evaluation_date, '%Y-%m-%d').date()
 
         try:
-            if self.closest_evaluation_date == None:
+            if self.closest_evaluation_date is None:
                 risk_free_rate_at_evaluation_date = \
                     risk_free_data.loc[
                         risk_free_data['Date'] == evaluation_datetime, 'Close'].iloc[0]
@@ -200,7 +220,8 @@ class OptionDataGathering():
         except IndexError:
             if risk_free_data['Date'].iloc[-1] < evaluation_datetime:
                 risk_free_rate_at_evaluation_date = risk_free_data['Date'].iloc[-1]
-            elif (risk_free_data['Date'].iloc[-1] > evaluation_datetime) and (risk_free_data['Date'].iloc[0] < evaluation_datetime):
+            elif (risk_free_data['Date'].iloc[-1] > evaluation_datetime) and (
+                    risk_free_data['Date'].iloc[0] < evaluation_datetime):
                 previous_day = datetime.strptime(evaluation_date, '%Y-%m-%d').date() - timedelta(days=1)
                 while True:
                     try:
@@ -217,7 +238,7 @@ class OptionDataGathering():
         return risk_free_rate_at_evaluation_date / 365
 
     def get_historical_volatilities(self, symbol: str):
-        """ Return the historical volatility of the price of the undelrying at the close """
+        """ Return the historical volatility of the price of the underlying at the close """
 
         underlying_data = self.get_underlying_data(symbol)
         historical_volatilities = pd.DataFrame()
@@ -230,10 +251,11 @@ class OptionDataGathering():
         """ Return the historical volatility at the valuation date """
 
         historical_volatilities = self.get_historical_volatilities(symbol)
-        if self.closest_evaluation_date == None:
+        if self.closest_evaluation_date is None:
             historical_volatility_at_evaluation_date = \
                 historical_volatilities.loc[
-                    historical_volatilities['Date'] == datetime.strptime(evaluation_date, '%Y-%m-%d').date(), 'Vol'].iloc[0]
+                    historical_volatilities['Date'] == datetime.strptime(evaluation_date,
+                                                                         '%Y-%m-%d').date(), 'Vol'].iloc[0]
         else:
             historical_volatility_at_evaluation_date = \
                 historical_volatilities.loc[
@@ -242,10 +264,12 @@ class OptionDataGathering():
         return historical_volatility_at_evaluation_date
 
     def get_implied_volatility(self, symbol, strike, expiration_date, option_type='call'):
+        """ Get the implied volatility internally computed. WARNING: very time-consuming, only works for AAPL """
+
         list_underlying_iv = ['AAPL']
         if symbol in list_underlying_iv:
             time_to_maturity = self.time_to_maturity(expiration_date)
-            iv =  ImpliedVolatility.OptionImpliedVolatility(symbol).get_implied_volatility(strike, time_to_maturity)
+            iv = ImpliedVolatility.OptionImpliedVolatility(symbol).get_implied_volatility(strike, time_to_maturity)
         else:
             print("Error: there is no data to compute the implied volatility for this asset.")
             iv = self.SigmaFromIv(symbol, strike, expiration_date, option_type)
@@ -253,7 +277,7 @@ class OptionDataGathering():
         return iv
 
     def SigmaFromIv(self, symbol, strike, expiration_date, option_type):
-        ''' K(strike price) needs to be precised here '''
+        """ K(strike price) needs to be precised here """
         # K = float(input("choose a strike price"))
         donnees = self.get_option_data(symbol, option_type, expiration_date)
         row = donnees[donnees['strike'] == strike]
@@ -266,7 +290,7 @@ class OptionDataGathering():
             return iv
 
     def time_to_maturity(self, expiration_date, evaluation_date=None):
-        if evaluation_date == None:
+        if evaluation_date is None:
             evaluation = datetime.today()
         else:
             evaluation = datetime.strptime(evaluation_date, "%Y-%m-%d")

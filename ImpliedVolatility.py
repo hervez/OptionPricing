@@ -12,6 +12,9 @@ from OptionDataType import OptionData
 
 
 class OptionImpliedVolatility:
+    """
+    Class to estimate the implied volatility of option given an underlying.
+    """
 
     def __init__(self, underlying: str):
         self.underlying = underlying

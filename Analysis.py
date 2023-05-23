@@ -1,4 +1,4 @@
-import math
+import datetime
 from typing import List
 
 from OptionDataType import OptionData
@@ -10,9 +10,20 @@ from TexDocumentCreator import TexDocument
 
 
 class OptionAnalysis:
+    """
+    Class orchestrating the different utilities to provide a comprehensive analysis.
+    """
 
     def __init__(self, underlying: str = 'AAPL', expiration_date: str = '2023-04-21',
-                 evaluation_date: str = datetime.today().strftime('%Y-%m-%d')):
+                 evaluation_date: str = datetime.datetime.today().strftime('%Y-%m-%d')):
+        """
+        Args:
+            underlying: underlying of the option priced
+            expiration_date: date at which the option expire
+            evaluation_date: date at which the option is priced. Make sure that it is a valid date. By default, it is
+            the current date.
+        """
+
         self.underlying = underlying
         self.expiration_date = expiration_date
         self.gatherer = OptionDataGathering(verbose=False, reload=True)
@@ -20,12 +31,18 @@ class OptionAnalysis:
         self.ploter = OptionGraphicalAnalysis(self.underlying)
 
     def get_options(self, option_type: str = 'call'):
+        """ Collect the option in a list of OptionData for a better access """
+
+        # Gather the parameter common to each option
         underlying_price = self.gatherer.get_underlying_value_at_evaluation_date(self.underlying, self.evaluation_date)
         risk_free_rate = self.gatherer.get_risk_free_rate(self.evaluation_date)
         time_to_maturity = self.gatherer.time_to_maturity(self.expiration_date, self.evaluation_date)
         historical_volatility = self.gatherer.get_historical_volatility(self.underlying, self.evaluation_date)
 
+        # Get the option from DataGatherer in a dataframe
         option_df = self.gatherer.get_option_data(self.underlying, option_type, self.expiration_date)
+
+        # Generate the list of OptionData
         option_list = []
         for index, row in option_df.iterrows():
             option = OptionData(
@@ -48,6 +65,8 @@ class OptionAnalysis:
         return option_list
 
     def estimate_implied_volatility(self, options_list: List[OptionData]):
+        """ Add the estimated volatility data to the OptionData in the option list. WARNING: very time-consuming!"""
+
         implied_vol_surface = OptionImpliedVolatility(self.underlying)
         for option in options_list:
             estimated_implied_volatility = implied_vol_surface.get_implied_volatility(option.strike_price,
@@ -58,11 +77,14 @@ class OptionAnalysis:
 
     @staticmethod
     def price_option(options_list: List[OptionData]):
+        """ Price the OptionData using the different Pricer """
+
         for option in options_list:
+
             # BS pricing
             pricer = OptionPricerBlackScholes(S_0=option.underlying_price, K=option.strike_price,
-                                               T=option.time_to_maturity, r=option.risk_free_rate,
-                                               sigma=option.historical_std)
+                                              T=option.time_to_maturity, r=option.risk_free_rate,
+                                              sigma=option.historical_std)
             if option.option_type == 'call':
                 option.BS_pricing = pricer.get_call()
             if option.option_type == 'put':
@@ -87,12 +109,13 @@ class OptionAnalysis:
                 option.Fourier_pricing = pricerFourier.get_put()
 
             # Fast Fourier Transform pricing
-            pricerFFT = OptionPricerFFT(S_0=option.underlying_price, K=option.strike_price, T=option.time_to_maturity, r=option.risk_free_rate,
-                                                sigma=option.historical_std)
+            pricerFFT = OptionPricerFFT(S_0=option.underlying_price, K=option.strike_price, T=option.time_to_maturity,
+                                        r=option.risk_free_rate, sigma=option.historical_std)
             if option.option_type == 'call':
                 option.FFT_pricing = pricerFFT.get_call()
             if option.option_type == 'put':
                 option.FFT_pricing = pricerFFT.get_put()
+
             # Merton pricing
             #pricerMerton = OptionPricerMerton(S_0=option.underlying_price, K=option.strike_price,
             #                            T=option.time_to_maturity, r=option.risk_free_rate,
@@ -117,6 +140,7 @@ class OptionAnalysis:
 
     @staticmethod
     def pricing_test(options_list):
+        """ Function to test if a Pricer works correctly. Used for development only """
         for option in options_list:
             pricer = OptionPricerCRR(S_0=option.underlying_price, K=option.strike_price,
                                      T=option.time_to_maturity, r=option.risk_free_rate,
@@ -129,20 +153,26 @@ class OptionAnalysis:
         return options_list
 
     def plot(self, option_list: List[OptionData], save_fig=False):
+        """ Create a plot of the predicted price and the actual price of the OptionData """
 
         self.ploter.plot_price_strikes(option_list=option_list, save_fig=save_fig)
 
     def plot_iv(self, option_list: List[OptionData]):
+        """ Plot the implied volatility of the OptionData """
 
         self.ploter.plot_implied_volatility_2D(option_list)
 
     def tex_document(self, underlying_price: float):
+        """ Generate the LaTex document containing the result of the code """
 
         texer = TexDocument(self.underlying, self.evaluation_date, self.expiration_date,
                             underlying_price=underlying_price)
         texer.generate_document()
 
     def complete_analysis(self):
+        """ Does a complete analysis by getting the option list, pricing it, generating the graphs and the LaTex
+        document """
+
         # Get the options
         calls = self.get_options('call')
         puts = self.get_options('put')
@@ -170,7 +200,7 @@ if __name__ == "__main__":
     priced_options = analyser.price_option(options)
     print(priced_options[5])
     for option in priced_options:
-       print(option)
+        print(option)
     analyser.plot(priced_options)
     # analyser.plot_iv(options_iv)
     # analyser.TexDocument()

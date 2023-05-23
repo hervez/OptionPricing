@@ -1,9 +1,9 @@
-import math
 
 
-class OptionData():
-    #set_strike_price = set()
-    #set_time_to_maturity = set()
+class OptionData:
+    """
+    Class to contain each option data
+    """
 
     def __init__(self,  option_type=None,
                  option_price=None,
@@ -13,17 +13,17 @@ class OptionData():
                  risk_free_rate=None,
                  implied_volatility=None,
                  evaluation_date=None,
-                 expiration_date = None,
-                 underlying = None,
-                 estimated_implied_vol = None,
-                 historical_volatility = None,
-                 historical_std = None,
-                 BS_pricing = None,
-                 CRR_pricing = None,
-                 BSM_pricing = None,
-                 Fourier_pricing = None,
-                 FFT_pricing = None
-                 ):
+                 expiration_date=None,
+                 underlying=None,
+                 estimated_implied_vol=None,
+                 historical_volatility=None,
+                 historical_std=None,
+                 BS_pricing=None,
+                 CRR_pricing=None,
+                 BSM_pricing=None,
+                 Fourier_pricing=None,
+                 FFT_pricing=None):
+
         self.option_price = option_price
         self.underlying_price = underlying_price
         self.strike_price = strike_price
@@ -42,8 +42,6 @@ class OptionData():
         self.BSM_pricing = BSM_pricing
         self.Fourier_pricing = Fourier_pricing
         self.FFT_pricing = FFT_pricing
-        # OptionData.set_strike_price.add(strike_price)
-        # OptionData.set_time_to_maturity.add(time_to_maturity)
 
     def __str__(self):
         string_representation = f"\t Option type: {self.option_type}\

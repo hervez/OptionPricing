@@ -1,71 +1,83 @@
-from datetime import datetime
 import math
 import numpy as np
 from numpy.fft import fft
-import matplotlib as mat
 from scipy.stats import norm
 from scipy import integrate
-import cmath
 from abc import ABC, abstractmethod
 
-
 class OptionPricer(ABC):
-    """ General interface of the pricer class """
-    def __init__(self,  S_0: float, K: float, T: int, r: float, sigma: float):
-
+    """
+    General interface of the class for pricing vanilla options.
+    """
+    def __init__(self, S_0: float, K: float, T: int, r: float, sigma: float):
+        """
+        Args:
+            S_0: Price of the underlying of the option at the date of the pricing
+            K: strike price of the option
+            T: time to maturity in days
+            r: risk-free rate
+            sigma: standard deviation of the underlying of the option
+        """
         self.S_0 = S_0
         self.r = r
         self.K = K
         self.T = T
         self.sigma = sigma
+
     @abstractmethod
     def get_call(self):
-        """ Return the price of a call with the given pricer """
+        """ Returns: the price of a call with the given pricer """
         pass
 
     @abstractmethod
     def get_put(self):
-        """ Return the price of a put with the given pricer """
+        """ Returns: the price of a put with the given pricer """
         pass
 
 
 class OptionPricerBlackScholes(OptionPricer):
-
+    """
+    Option pricing with basic Black and Scholes model
+    """
     def __init__(self, S_0: float, K: float, T: int, r: float, sigma: float):
 
         super().__init__(S_0=S_0, K=K, T=T, r=r, sigma=sigma)
 
         # For BS:
         self.d1 = (math.log(self.S_0 / self.K) + (self.r + ((self.sigma ** 2) / 2)) * self.T) / (
-                    self.sigma * math.sqrt(self.T))
+                self.sigma * math.sqrt(self.T))
         self.d2 = self.d1 - (self.sigma * math.sqrt(self.T))
         self.Nd1 = norm.cdf(self.d1, 0, 1)  # N(d1)
         self.Nd2 = norm.cdf(self.d2, 0, 1)  # N(d2)
         self.Nmind1 = norm.cdf(-self.d1, 0, 1)  # N(-d1)
         self.Nmind2 = norm.cdf(-self.d2, 0, 1)  # N(-d2)
 
-
     def get_call(self):
-
         C = self.S_0 * self.Nd1 - self.K * self.Nd2 * math.e ** (- self.r * self.T)
 
         return C
 
     def get_put(self):
-
         P = self.K * self.Nmind2 * math.e ** (-self.r * self.T) - self.S_0 * self.Nmind1
 
         return P
 
-class OptionPricerCRR(OptionPricer):
 
-    def __init__(self, S_0: float, K: float, T: int, r: float, sigma: float, M: float):
+class OptionPricerCRR(OptionPricer):
+    """
+    Option pricing with the Cox-Rox-Rubinstein binomial model
+    """
+    def __init__(self, S_0: float, K: float, T: int, r: float, sigma: float, M: int):
+        """
+        Args:
+            M: number of steps for the binomial process
+        """
 
         super().__init__(S_0=S_0, K=K, T=T, r=r, sigma=sigma)
 
-        self.M = M # Number of time intervals
+        self.M = M  # Number of time intervals
         self.dt = T / self.M  # length of time interval
-        self.df = math.exp(-r * self.dt) # discount factor per interval
+        self.df = math.exp(-r * self.dt)  # discount factor per interval
 
         # Binomial Parameters
         self.u = math.exp(sigma * math.sqrt(self.dt))  # up movement
@@ -81,13 +93,13 @@ class OptionPricerCRR(OptionPricer):
 
     def get_call(self):
 
-        V = np.maximum(self.S - self.K, 0 ) # values of the European call option
+        V = np.maximum(self.S - self.K, 0)  # values of the European call option
 
         z = 0
-        for t in range(self.M-1, -1, -1):
-            V[0:self.M - z, t] = (self.q * V[0:self.M - z, t + 1] + (1 - self.q) * V[1:self.M - z + 1, t+1]) * self.df
+        for t in range(self.M - 1, -1, -1):
+            V[0:self.M - z, t] = (self.q * V[0:self.M - z, t + 1] + (1 - self.q) * V[1:self.M - z + 1, t + 1]) * self.df
             z += 1
-        #print(V[0,0])
+        # print(V[0,0])
 
         return V[0, 0]
 
@@ -104,40 +116,44 @@ class OptionPricerCRR(OptionPricer):
 
 
 class OptionPricerFourier(OptionPricer):
-
+    """
+    Option pricing with the Lewis-Fourier model
+    """
     def __init__(self, S_0: float, K: float, T: int, r: float, sigma: float):
 
         super().__init__(S_0=S_0, K=K, T=T, r=r, sigma=sigma)
 
     def get_call(self):
-
-        integral_value = integrate.quad(lambda u: self.BSM_integral_function(u, self.S_0, self.K, self.T, self.r, self.sigma), 0 , 100)[0]
-        call = max(0, self.S_0 - np.exp(-self.r * self.T) * np.sqrt(self.S_0 * self.K) / np.pi * integral_value )
+        integral_value = \
+            integrate.quad(lambda u: self.BSM_integral_function(u, self.S_0, self.K, self.T, self.r, self.sigma), 0,
+                           100)[0]
+        call = max(0, self.S_0 - np.exp(-self.r * self.T) * np.sqrt(self.S_0 * self.K) / np.pi * integral_value)
 
         return call
 
     def get_put(self):
-        # Computed using put-call parity
         call = self.get_call()
-        put = call - self.S_0 + self.K*np.exp(-self.r * self.T)
+        put = call - self.S_0 + self.K * np.exp(-self.r * self.T)  # Computed using put-call parity
 
         return put
 
     def BSM_integral_function(self, u, S_0, K, T, r, sigma):
-
         cf_value = self.BSM_characteristic_function(u - 1j * 0.5, 0.0, T, r, sigma)
-        integral_value = 1 / (u ** 2 + 0.25) * (np.exp(1j * u * np.log(S_0/K)) * cf_value).real
+        integral_value = 1 / (u ** 2 + 0.25) * (np.exp(1j * u * np.log(S_0 / K)) * cf_value).real
 
         return integral_value
+
     @staticmethod
     def BSM_characteristic_function(v, x0, T, r, sigma):
-
-        cf_value = np.exp(((x0/T+r-0.5*sigma**2) * 1j * v - 0.5 * sigma **2 * v **2 ) * T )
+        cf_value = np.exp(((x0 / T + r - 0.5 * sigma ** 2) * 1j * v - 0.5 * sigma ** 2 * v ** 2) * T)
 
         return cf_value
 
-class OptionPricerFFT(OptionPricer):
 
+class OptionPricerFFT(OptionPricer):
+    """
+    Option pricing with Fast Fourier Transform
+    """
     def __init__(self, S_0: float, K: float, T: int, r: float, sigma: float):
 
         super().__init__(S_0=S_0, K=K, T=T, r=r, sigma=sigma)
@@ -152,12 +168,21 @@ class OptionPricerFFT(OptionPricer):
         b = 0.5 * N * eps - k
         u = np.arange(1, N + 1, 1)
         vo = eta * (u - 1)
+
+        delt = np.zeros(N, dtype=float)
+        delt[0] = 1
+        j = np.arange(1, N + 1, 1)
+        SimpsonW = (3 + (-1) ** j - delt) / 3
+
         # Modifications to Ensure int_value integrability
         if self.S_0 >= 0.95 * self.K:  # ITM case
             alpha = 1.5
             v = vo - (alpha + 1) * 1j
             modcharFunc = np.exp(-self.r * self.T) * (OptionPricerFourier.BSM_characteristic_function(
                 v, x0, self.T, self.r, self.sigma) / (alpha ** 2 + alpha - vo ** 2 + 1j * (2 * alpha + 1) * vo))
+            FFTFunc = np.exp(1j * b * vo) * modcharFunc * eta * SimpsonW
+            payoff = (fft(FFTFunc)).real
+            CallValueM = np.exp(-alpha * k) / np.pi * payoff
         else:
             alpha = 1.1
             v = (vo - 1j * alpha) - 1j
@@ -174,20 +199,12 @@ class OptionPricerFFT(OptionPricer):
                                                                                                          self.r,
                                                                                                          self.sigma) / (
                                                                (vo + 1j * alpha) ** 2 - 1j * (vo + 1j * alpha)))
-        delt = np.zeros(N, dtype=float)
-        delt[0] = 1
-        j = np.arange(1, N + 1, 1)
-        SimpsonW = (3 + (-1) ** j - delt) / 3
-        if self.S_0 >= 0.95 * self.K:
-            FFTFunc = np.exp(1j * b * vo) * modcharFunc * eta * SimpsonW
-            payoff = (fft(FFTFunc)).real
-            CallValueM = np.exp(-alpha * k) / np.pi * payoff
-        else:
             FFTFunc = (np.exp(1j * b * vo)
-            * (modcharFunc1 - modcharFunc2)
-            * 0.5 * eta * SimpsonW)
+                       * (modcharFunc1 - modcharFunc2)
+                       * 0.5 * eta * SimpsonW)
             payoff = (fft(FFTFunc)).real
             CallValueM = payoff / (np.sinh(alpha * k) * np.pi)
+
         pos = int((k + b) / eps)
         CallValue = CallValueM[pos] * self.S_0
 
@@ -196,8 +213,12 @@ class OptionPricerFFT(OptionPricer):
     def get_put(self):
 
         return None
-class OptionPricerMerton(OptionPricer):
 
+
+class OptionPricerMerton(OptionPricer):
+    """
+    Option pricing with the Merton jump model
+    """
     def __init__(self, S_0: float, K: float, T: int, r: float, sigma: float):
 
         super().__init__(S_0=S_0, K=K, T=T, r=r, sigma=sigma)
@@ -213,7 +234,7 @@ class OptionPricerMerton(OptionPricer):
         Fpoisson = 0
         i = 0
         s = 0
-        while Fpoisson < 0.999:  # 0.999 is arbitrary, the closer to 1, the better, but it becomes computationally expensive
+        while Fpoisson < 0.999:  # the closer to 1, the better, but it becomes computationally expensive
             ''' I calculate the probability that the number of jumps = i, then sigma_n and r_n, and put
             them in the Black and Scholes formula and I get the sum of P(N=i)*(BSCall) from 0 to
             a large enough number'''
@@ -254,7 +275,6 @@ class OptionPricerFourierPricing(OptionPricer):
     # Here lie the characteristic functions:
 
     def __init__(self, S_0: float, K: float, T: int, r: float, sigma: float):
-
         super().__init__(S_0=S_0, K=K, T=T, r=r, sigma=sigma)
 
         self.mu = self.r - 0.5 * (self.sigma ** 2) * self.T
@@ -267,15 +287,11 @@ class OptionPricerFourierPricing(OptionPricer):
     def delta_option(self, cf):  # Need to specify characteristic function
         f = lambda u: np.real((np.exp(-u * math.log(self.K) * 1j) * cf(u - 1j) / (u * 1j)) / cf(-1j))
         F = integrate.quad(f, 0, np.inf, limit=10000)
-        print(F)
-        print(self.Nd1)
         return 1 / 2 + F[0] / math.pi
 
     def prob2(self, cf):  # Probability of finishing in-the-money #Need to specify the characteristic function
         f = lambda u: np.real(np.exp(-u * math.log(self.K) * 1j) / (u * 1j) * cf(u))
         F = integrate.quad(f, 0, np.inf, limit=10000)
-        print(F)
-        print(self.Nd2)
         return 1 / 2 + F[0] / math.pi
 
     # Here lie the functions that produce an output depending on what type of Fourier-priced option is called
@@ -288,19 +304,19 @@ class OptionPricerFourierPricing(OptionPricer):
 
 
 if __name__ == '__main__':
-    #black_scholes_pricer = OptionPricerlackScholes('AAPL', 'call', '2023-04-21', '2023-04-10', 100)
-    #pricer_CRR = OptionPricerBlackScholes(S_0=175, K=175, T=1, r=0.014, sigma=0.01)
-    #print(pricer_CRR.get_call())
+    # black_scholes_pricer = OptionPricerlackScholes('AAPL', 'call', '2023-04-21', '2023-04-10', 100)
+    # pricer_CRR = OptionPricerBlackScholes(S_0=175, K=175, T=1, r=0.014, sigma=0.01)
+    # print(pricer_CRR.get_call())
     pricer_Fourier = OptionPricerFourier(S_0=175, K=175, T=1, r=0.014, sigma=0.01)
     pricer_FFT = OptionPricerFFT(S_0=175, K=175, T=1, r=0.014, sigma=0.01)
     print(pricer_Fourier.get_call())
     print(pricer_FFT.get_call())
-    #call = black_scholes_pricer.get_call()
+    # call = black_scholes_pricer.get_call()
     # merton_log_call = black_scholes_pricer.get_MertonLognormalJumpCall()
-    #put = black_scholes_pricer.get_put()
-    #merton_log_put = black_scholes_pricer.get_MertonLognormalJumpPut()
-    #print(call)
-    #print(merton_log_call)  # should be greater or equal to the BS call
-    #print(put)
-    #print(merton_log_put)  # Should be greater or equal to the BS Put
+    # put = black_scholes_pricer.get_put()
+    # merton_log_put = black_scholes_pricer.get_MertonLognormalJumpPut()
+    # print(call)
+    # print(merton_log_call)  # should be greater or equal to the BS call
+    # print(put)
+    # print(merton_log_put)  # Should be greater or equal to the BS Put
     # Double check values with https://demonstrations.wolfram.com/OptionPricesInMertonsJumpDiffusionModel/

@@ -3,9 +3,10 @@ from datetime import datetime, timedelta
 import pandas as pd
 from Utils import *
 import numpy as np
+from arch import arch_model
 
 import ImpliedVolatility
-
+import Calibration
 
 class OptionDataGathering:
     """ Class to gather the information relative to an underlying.
@@ -65,6 +66,7 @@ class OptionDataGathering:
             # Create additional information columns such as the return, log-return and the date in datetime
             data['Return'] = data['Close'].pct_change()
             data['Log_return'] = np.log(data['Close']) - np.log(data['Close'].shift(1))
+            data['Vol'] = data['Log_return'].rolling(100).std()
             data['Date'] = pd.to_datetime(data.index, errors='coerce', utc=True)
             data = data.dropna(subset=['Date'])
             data['Date'] = data['Date'].dt.date
@@ -250,7 +252,7 @@ class OptionDataGathering:
     def get_historical_volatility(self, symbol: str, evaluation_date: str):
         """ Return the historical volatility at the valuation date """
 
-        historical_volatilities = self.get_historical_volatilities(symbol)
+        historical_volatilities = self.get_underlying_data(symbol)
         if self.closest_evaluation_date is None:
             historical_volatility_at_evaluation_date = \
                 historical_volatilities.loc[
@@ -275,6 +277,72 @@ class OptionDataGathering:
             iv = self.SigmaFromIv(symbol, strike, expiration_date, option_type)
 
         return iv
+
+    def get_GARCH_volatility(self, symbol, log_return: bool = True):
+
+        if log_return:
+            returns = np.array(self.get_underlying_data(symbol)['Log_return'])
+        else:
+            returns = np.array(self.get_underlying_data(symbol)['Return'])
+        returns = returns[~np.isnan(returns)]
+        model = arch_model(returns, vol="GARCH", p=1, q=1)
+        return model.fit().conditional_volatility
+
+    def get_calibration_Merton(self, symbol):
+        """ Get the calibration for an asset for the Merton model """
+
+        # Create a file path to load the cache
+        file_path = file_path = './results/{}/MertonParameters.csv'.format(symbol)
+
+        try:
+            variables = np.genfromtxt(file_path, delimiter=',')
+            if self.verbose:
+                print("Merton model parameters obtained from the cache.")
+        except FileNotFoundError:
+            # Get the log returns to calibrate and their GARCH volatility
+            log_returns = np.array(self.get_underlying_data(symbol)['Log_return'])
+            log_returns = log_returns[~np.isnan(log_returns)]
+            volatility = self.get_GARCH_volatility(symbol)
+
+            # Get the calibration for the Merton model
+            calibrator = Calibration.CalibrateVanilla(log_returns, volatility)
+            variables = np.array(calibrator.Mertoncalibrate())
+            if self.verbose:
+                print('Computed the Merton model parameters.')
+            if self.save_data:
+                np.savetxt(file_path, variables, delimiter=",")
+                if self.save_data:
+                    print(f"Merton model parameters saved under {file_path}")
+
+        return variables
+
+    def get_calibration_Heston(self, symbol):
+        """ Get the calibration for an asset for the Merton model """
+
+        # Create a file path to load the cache
+        file_path = file_path = './results/{}/HestonParameters.csv'.format(symbol)
+
+        try:
+            variables = np.genfromtxt(file_path, delimiter=',')
+            if self.verbose:
+                print("Heston model parameters obtained from the cache.")
+        except FileNotFoundError:
+            # Get the log returns to calibrate and their GARCH volatility
+            log_returns = np.array(self.get_underlying_data(symbol)['Log_return'])
+            log_returns = log_returns[~np.isnan(log_returns)]
+            volatility = self.get_GARCH_volatility(symbol)
+
+            # Get the calibration for the Merton model
+            calibrator = Calibration.CalibrateVanilla(log_returns, volatility)
+            variables = np.array(calibrator.HestonCalibrate())
+            if self.verbose:
+                print('Computed the Heston model parameters.')
+            if self.save_data:
+                np.savetxt(file_path, variables, delimiter=",")
+                if self.verbose:
+                    print(f"Heston model parameters saved under {file_path}")
+
+        return variables
 
     def SigmaFromIv(self, symbol, strike, expiration_date, option_type):
         """ K(strike price) needs to be precised here """

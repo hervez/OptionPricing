@@ -20,9 +20,10 @@ class OptionData:
                  historical_std=None,
                  BS_pricing=None,
                  CRR_pricing=None,
-                 BSM_pricing=None,
                  Fourier_pricing=None,
-                 FFT_pricing=None):
+                 FFT_pricing=None,
+                 Merton_pricing=None,
+                 Heston_pricing=None):
 
         self.option_price = option_price
         self.underlying_price = underlying_price
@@ -39,9 +40,10 @@ class OptionData:
         self.historical_std = historical_std
         self.BS_pricing = BS_pricing
         self.CRR_pricing = CRR_pricing
-        self.BSM_pricing = BSM_pricing
         self.Fourier_pricing = Fourier_pricing
         self.FFT_pricing = FFT_pricing
+        self.Merton_pricing = Merton_pricing
+        self.Heston_pricing = Heston_pricing
 
     def __str__(self):
         string_representation = f"\t Option type: {self.option_type}\
@@ -51,9 +53,10 @@ class OptionData:
             \n \t Option price: {self.option_price} \
             \n \t BS pricing: {self.BS_pricing}\
             \n \t CRR pricing: {self.CRR_pricing}\
-            \n \t BSM pricing: {self.BSM_pricing}\
             \n \t Fourier pricing: {self.Fourier_pricing}\
             \n \t FFT pricing: {self.FFT_pricing}\
+            \n \t Merton pricing: {self.Merton_pricing}\
+            \n \t Heston pricing: {self.Heston_pricing}\
             \n \t Underlying price: {self.underlying_price} \
             \n \t Strike price: {self.strike_price} \
             \n \t Time to maturity: {self.time_to_maturity}\

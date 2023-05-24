@@ -26,7 +26,7 @@ class OptionAnalysis:
 
         self.underlying = underlying
         self.expiration_date = expiration_date
-        self.gatherer = OptionDataGathering(verbose=False, reload=True)
+        self.gatherer = OptionDataGathering(verbose=False, reload=False)
         self.evaluation_date = evaluation_date
         self.ploter = OptionGraphicalAnalysis(self.underlying)
 
@@ -75,8 +75,7 @@ class OptionAnalysis:
 
         return options_list
 
-    @staticmethod
-    def price_option(options_list: List[OptionData]):
+    def price_option(self, options_list: List[OptionData], verbose: bool = False):
         """ Price the OptionData using the different Pricer """
 
         for option in options_list:
@@ -89,6 +88,8 @@ class OptionAnalysis:
                 option.BS_pricing = pricer.get_call()
             if option.option_type == 'put':
                 option.BS_pricing = pricer.get_put()
+            if verbose:
+                print("Black Scholes Priced")
 
             # CRR pricing
             pricerCRR = OptionPricerCRR(S_0=option.underlying_price, K=option.strike_price,
@@ -98,6 +99,8 @@ class OptionAnalysis:
                 option.CRR_pricing = pricerCRR.get_call()
             if option.option_type == 'put':
                 option.CRR_pricing = pricerCRR.get_put()
+            if verbose:
+                print("CRR priced")
 
             # Fourier pricing
             pricerFourier = OptionPricerFourier(S_0=option.underlying_price, K=option.strike_price,
@@ -107,6 +110,8 @@ class OptionAnalysis:
                 option.Fourier_pricing = pricerFourier.get_call()
             if option.option_type == 'put':
                 option.Fourier_pricing = pricerFourier.get_put()
+            if verbose:
+                print("Fourier priced")
 
             # Fast Fourier Transform pricing
             pricerFFT = OptionPricerFFT(S_0=option.underlying_price, K=option.strike_price, T=option.time_to_maturity,
@@ -115,47 +120,69 @@ class OptionAnalysis:
                 option.FFT_pricing = pricerFFT.get_call()
             if option.option_type == 'put':
                 option.FFT_pricing = pricerFFT.get_put()
+            if verbose:
+                print("FFT priced")
 
             # Merton pricing
-            #pricerMerton = OptionPricerMerton(S_0=option.underlying_price, K=option.strike_price,
-            #                            T=option.time_to_maturity, r=option.risk_free_rate,
-            #                            sigma=option.implied_volatility)
-            #if option.option_type == 'call':
-            #    option.BSM_pricing = pricerMerton.get_call()
-            #if option.option_type == 'put':
-            #    option.BSM_pricing = pricerCRR.get_put()
-            #print("BSM priced")
+            Merton_variables = self.gatherer.get_calibration_Merton(self.underlying)
+            alpha = Merton_variables[0]
+            lamda = Merton_variables[1]
+            delta = Merton_variables[2]
+            mu = Merton_variables[3]
+            Msigma = Merton_variables[4]
 
-            # Houston pricing
-            #pricerFourier = OptionPricerFourierPricing(S_0=option.underlying_price, K=option.strike_price,
-            #                                  T=option.time_to_maturity, r=option.risk_free_rate,
-            #                                  sigma=option.implied_volatility)
-            #if option.option_type == 'call':
-            #    option.Fourier_pricing = pricerFourier.get_call()
-            #if option.option_type == 'put':
-            #    option.Fourier_pricing = pricerFourier.get_put()
-            #print("Fourier priced")
+            for option in options_list:
+                pricer = OptionPricerMerton(S_0=option.underlying_price, K=option.strike_price,
+                                            T=option.time_to_maturity, r=option.risk_free_rate,
+                                            sigma=option.historical_std, alpha=alpha, lamda=lamda, delta=delta, mu=mu,
+                                            Msigma=Msigma)
+                if option.option_type == 'call':
+                    option.Merton_pricing = pricer.get_call()
+                if option.option_type == 'put':
+                    option.Merton_pricing = pricer.get_put()
+            if verbose:
+                print("Merton priced")
+
+            # Heston pricing
+            Heston_variables = self.gatherer.get_calibration_Heston(self.underlying)
+            mu = Heston_variables[0]
+            rho = Heston_variables[1]
+            kappa = Heston_variables[2]
+            eta = Heston_variables[3]
+            theta = Heston_variables[4]
+
+            for option in options_list:
+                pricer = OptionPricerHeston(S_0=option.underlying_price, K=option.strike_price,
+                                            T=option.time_to_maturity, r=option.risk_free_rate,
+                                            sigma=option.historical_std, rho=rho, kappa=kappa, eta=eta, theta=theta)
+                if option.option_type == 'call':
+                    option.Heston_pricing = pricer.get_call()
+                if option.option_type == 'put':
+                    option.Heston_pricing = pricer.get_put()
+            if verbose:
+                print("Heston priced")
 
         return options_list
 
-    @staticmethod
-    def pricing_test(options_list):
+
+    def pricing_test(self, options_list):
         """ Function to test if a Pricer works correctly. Used for development only """
+
         for option in options_list:
-            pricer = OptionPricerCRR(S_0=option.underlying_price, K=option.strike_price,
-                                     T=option.time_to_maturity, r=option.risk_free_rate,
-                                     sigma=option.historical_std, M=10*option.time_to_maturity)
+            pricerCRR = OptionPricerCRR(S_0=option.underlying_price, K=option.strike_price,
+                                        T=option.time_to_maturity, r=option.risk_free_rate,
+                                        sigma=option.historical_std, M=10 * option.time_to_maturity)
             if option.option_type == 'call':
-                option.BS_pricing = pricer.get_call()
+                option.CRR_pricing = pricerCRR.get_call()
             if option.option_type == 'put':
-                option.BS_pricing = pricer.get_put()
+                option.CRR_pricing = pricerCRR.get_put()
 
         return options_list
 
-    def plot(self, option_list: List[OptionData], save_fig=False):
+    def plot(self, option_list: List[OptionData], save_fig=False, pricer: str = None):
         """ Create a plot of the predicted price and the actual price of the OptionData """
 
-        self.ploter.plot_price_strikes(option_list=option_list, save_fig=save_fig)
+        self.ploter.plot_price_strikes(option_list=option_list, save_fig=save_fig, pricer=pricer)
 
     def plot_iv(self, option_list: List[OptionData]):
         """ Plot the implied volatility of the OptionData """
@@ -176,14 +203,33 @@ class OptionAnalysis:
         # Get the options
         calls = self.get_options('call')
         puts = self.get_options('put')
+        print("Options gathered")
 
         # Price the option
         priced_calls = self.price_option(calls)
         priced_puts = self.price_option(puts)
+        print("Options priced")
 
         # Create the figure
         self.plot(priced_calls, save_fig=True)
         self.plot(priced_puts, save_fig=True)
+
+        # Create the individual figures
+        self.plot(priced_calls, save_fig=True, pricer="BS")
+        self.plot(priced_calls, save_fig=True, pricer="CRR")
+        self.plot(priced_calls, save_fig=True, pricer="Fourier")
+        self.plot(priced_calls, save_fig=True, pricer="FFT")
+        self.plot(priced_calls, save_fig=True, pricer="Merton")
+        self.plot(priced_calls, save_fig=True, pricer="Heston")
+
+        self.plot(priced_puts, save_fig=True, pricer="BS")
+        self.plot(priced_puts, save_fig=True, pricer="CRR")
+        self.plot(priced_puts, save_fig=True, pricer="Fourier")
+        self.plot(priced_puts, save_fig=True, pricer="FFT")
+        self.plot(priced_puts, save_fig=True, pricer="Merton")
+        self.plot(priced_puts, save_fig=True, pricer="Heston")
+
+        print("Figures created")
 
         # Generate the tex document
         underlying_price = priced_calls[0].underlying_price
@@ -192,15 +238,17 @@ class OptionAnalysis:
 
 if __name__ == "__main__":
     analyser = OptionAnalysis(expiration_date='2023-05-26', evaluation_date='2023-05-22')
-    #analyser.complete_analysis()
+    analyser.complete_analysis()
     # print(analyser.underlying)time_to_maturity
-    options = analyser.get_options()
+    #options = analyser.get_options()
+
     # options_iv = analyser.estimate_implied_volatility(options)
-    #priced_options = analyser.price_option(options)
-    priced_options = analyser.price_option(options)
-    print(priced_options[5])
-    for option in priced_options:
-        print(option)
-    analyser.plot(priced_options)
-    # analyser.plot_iv(options_iv)
+
+    #priced_options = analyser.pricing_test(options)
+    # priced_options = analyser.price_option(options)
+    #print(priced_options[5])
+    #for option in priced_options:
+    #    print(option)
+    #analyser.plot(priced_options, False, 'CRR')
+    #analyser.plot_iv(options_iv)
     # analyser.TexDocument()

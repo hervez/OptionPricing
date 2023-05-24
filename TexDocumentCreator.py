@@ -31,7 +31,7 @@ class TexDocument:
 
         latex_code = f"""
 \\documentclass{{article}}
-\\usepackage{{pgf}}
+\\usepackage{{subcaption}}
 \\usepackage{{graphicx}}
 
 \\setlength{{\\leftmargin}}{{0cm}}
@@ -53,11 +53,74 @@ class TexDocument:
     \\begin{{minipage}}[b]{{\\textwidth}}
     \\includegraphics[width=\\textwidth]{{./figures/figure_price_strike_call.png}}
     \\end{{minipage}}
+    
     \\begin{{minipage}}[b]{{\\textwidth}}
     \\includegraphics[width=\\textwidth]{{./figures/figure_price_strike_put.png}}
     \\end{{minipage}}
+    
     \\caption{{Estimated and true option prices.}}
     \\label{{fig:call_put}}
+\\end{{figure}}
+
+\\begin{{figure}}
+    \\centering
+    \\begin{{subfigure}}{{0.45\\textwidth}}
+    \\includegraphics[width=\\textwidth]{{./figures/figure_price_strike_call_BS.png}}
+    \\end{{subfigure}}
+    \\hfill
+    \\begin{{subfigure}}{{0.45\\textwidth}}
+    \\includegraphics[width=\\textwidth]{{./figures/figure_price_strike_call_CRR.png}}
+    \\end{{subfigure}}
+    
+    \\begin{{subfigure}}{{0.45\\textwidth}}
+    \\includegraphics[width=\\textwidth]{{./figures/figure_price_strike_call_Fourier.png}}
+    \\end{{subfigure}}
+    \\hfill
+    \\begin{{subfigure}}{{0.45\\textwidth}}
+    \\includegraphics[width=\\textwidth]{{./figures/figure_price_strike_call_FFT.png}}
+    \\end{{subfigure}}
+    
+    \\begin{{subfigure}}{{0.45\\textwidth}}
+    \\includegraphics[width=\\textwidth]{{./figures/figure_price_strike_call_Merton.png}}
+    \\end{{subfigure}}
+    \\hfill
+    \\begin{{subfigure}}{{0.45\\textwidth}}
+    \\includegraphics[width=\\textwidth]{{./figures/figure_price_strike_call_Heston.png}}
+    \\end{{subfigure}}
+    
+    \\caption{{Estimated and true call prices with different pricers.}}
+    \\label{{fig:call}}
+\\end{{figure}}
+
+\\begin{{figure}}
+    \\centering
+    
+    \\begin{{subfigure}}{{0.45\\textwidth}}
+    \\includegraphics[width=\\textwidth]{{./figures/figure_price_strike_put_BS.png}}
+    \\end{{subfigure}}
+    \\hfill
+    \\begin{{subfigure}}{{0.45\\textwidth}}
+    \\includegraphics[width=\\textwidth]{{./figures/figure_price_strike_put_CRR.png}}
+    \\end{{subfigure}}
+    
+    \\begin{{subfigure}}{{0.45\\textwidth}}
+    \\includegraphics[width=\\textwidth]{{./figures/figure_price_strike_put_Fourier.png}}
+    \\end{{subfigure}}
+    \\hfill
+    \\begin{{subfigure}}{{0.45\\textwidth}}
+    \\includegraphics[width=\\textwidth]{{./figures/figure_price_strike_put_FFT.png}}
+    \\end{{subfigure}}
+    
+    \\begin{{subfigure}}{{0.45\\textwidth}}
+    \\includegraphics[width=\\textwidth]{{./figures/figure_price_strike_put_Merton.png}}
+    \\end{{subfigure}}
+    \\hfill
+    \\begin{{subfigure}}{{0.45\\textwidth}}
+    \\includegraphics[width=\\textwidth]{{./figures/figure_price_strike_put_Heston.png}}
+    \\end{{subfigure}}
+    
+    \\caption{{Estimated and true put prices with different pricers.}}
+    \\label{{fig:put}}
 \\end{{figure}}
 
 \\end{{document}}"""

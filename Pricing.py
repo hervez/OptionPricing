@@ -5,10 +5,12 @@ from scipy.stats import norm
 from scipy import integrate
 from abc import ABC, abstractmethod
 
+
 class OptionPricer(ABC):
     """
     General interface of the class for pricing vanilla options.
     """
+
     def __init__(self, S_0: float, K: float, T: int, r: float, sigma: float):
         """
         Args:
@@ -39,8 +41,8 @@ class OptionPricerBlackScholes(OptionPricer):
     """
     Option pricing with basic Black and Scholes model
     """
-    def __init__(self, S_0: float, K: float, T: int, r: float, sigma: float):
 
+    def __init__(self, S_0: float, K: float, T: int, r: float, sigma: float):
         super().__init__(S_0=S_0, K=K, T=T, r=r, sigma=sigma)
 
         # For BS:
@@ -67,6 +69,7 @@ class OptionPricerCRR(OptionPricer):
     """
     Option pricing with the Cox-Rox-Rubinstein binomial model
     """
+
     def __init__(self, S_0: float, K: float, T: int, r: float, sigma: float, M: int):
         """
         Args:
@@ -119,8 +122,8 @@ class OptionPricerFourier(OptionPricer):
     """
     Option pricing with the Lewis-Fourier model
     """
-    def __init__(self, S_0: float, K: float, T: int, r: float, sigma: float):
 
+    def __init__(self, S_0: float, K: float, T: int, r: float, sigma: float):
         super().__init__(S_0=S_0, K=K, T=T, r=r, sigma=sigma)
 
     def get_call(self):
@@ -154,6 +157,7 @@ class OptionPricerFFT(OptionPricer):
     """
     Option pricing with Fast Fourier Transform
     """
+
     def __init__(self, S_0: float, K: float, T: int, r: float, sigma: float):
 
         super().__init__(S_0=S_0, K=K, T=T, r=r, sigma=sigma)
@@ -211,21 +215,26 @@ class OptionPricerFFT(OptionPricer):
         return CallValue
 
     def get_put(self):
+        call = self.get_call()
+        put = call - self.S_0 + self.K * np.exp(-self.r * self.T)  # Computed using put-call parity
 
-        return None
+        return put
 
 
 class OptionPricerMerton(OptionPricer):
     """
     Option pricing with the Merton jump model
     """
-    def __init__(self, S_0: float, K: float, T: int, r: float, sigma: float):
+
+    def __init__(self, S_0: float, K: float, T: int, r: float, sigma: float, alpha: float, lamda: float, delta: float,
+                 mu: float, Msigma: float):
 
         super().__init__(S_0=S_0, K=K, T=T, r=r, sigma=sigma)
 
-        self.alpha = 0.1
-        self.lamda = 1  # If lambda = 0, we have the traditinal BS case
-        self.delta = 0.04
+        self.sigmaMerton = Msigma
+        self.alpha = alpha
+        self.lamda = lamda  # If lambda = 0, we have the traditinal BS case
+        self.delta = delta
         self.y = self.alpha + (self.delta ** 2) / 2
         self.k = math.exp(self.y) - 1
         self.lambdaprime = self.lamda * (1 + self.k)
@@ -234,14 +243,14 @@ class OptionPricerMerton(OptionPricer):
         Fpoisson = 0
         i = 0
         s = 0
-        while Fpoisson < 0.999:  # the closer to 1, the better, but it becomes computationally expensive
-            ''' I calculate the probability that the number of jumps = i, then sigma_n and r_n, and put
-            them in the Black and Scholes formula and I get the sum of P(N=i)*(BSCall) from 0 to
-            a large enough number'''
+        while Fpoisson < 0.95:  # 0.999 is arbitrary, the closer to 1, the better, but it becomes computationally expensive
+            # I calculate the probability that the number of jumps = i, then sigma_n and r_n, and put
+            # them in the Black and Scholes formula and I get the sum of P(N=i)*(BSCall) from 0 to
+            # a large enough number
             fpoisson = (self.lambdaprime * self.T) ** i * (math.e ** (-self.lambdaprime * self.T)) / math.factorial(i)
             Fpoisson += fpoisson
             r_n = self.r - self.lamda * self.k + i * self.y / self.T
-            sigma_n = math.sqrt(self.sigma ** 2 + i * (self.delta ** 2) / self.T)
+            sigma_n = math.sqrt(self.sigmaMerton ** 2 + i * (self.delta ** 2) / self.T)
             d1_n = (math.log(self.S_0 / self.K) + (r_n + (sigma_n ** 2) / 2) * self.T) / (sigma_n * math.sqrt(self.T))
             d2_n = d1_n - sigma_n * math.sqrt(self.T)
             Nd1_n = norm.cdf(d1_n, 0, 1)  # N(d1_n)
@@ -254,14 +263,14 @@ class OptionPricerMerton(OptionPricer):
         Fpoisson = 0
         i = 0
         s = 0
-        while Fpoisson < 0.999:  # 0.999 is arbitrary, the closer to 1, the better, but it becomes computationally expensive
-            ''' I calculate the probability that the number of jumps = i, then sigma_n and r_n, and put
-            them in the Black and Scholes formula and I get the sum of P(N=i)*(BSCall) from 0 to
-            a large enough number'''
+        while Fpoisson < 0.95:  # 0.999 is arbitrary, the closer to 1, the better, but it becomes computationally expensive
+            # I calculate the probability that the number of jumps = i, then sigma_n and r_n, and put
+            # them in the Black and Scholes formula and I get the sum of P(N=i)*(BSCall) from 0 to
+            # a large enough number
             fpoisson = (self.lambdaprime * self.T) ** i * (math.e ** (-self.lambdaprime * self.T)) / math.factorial(i)
             Fpoisson += fpoisson
             r_n = self.r - self.lamda * self.k + i * self.y / self.T
-            sigma_n = math.sqrt(self.sigma ** 2 + i * (self.delta ** 2) / self.T)
+            sigma_n = math.sqrt(self.sigmaMerton ** 2 + i * (self.delta ** 2) / self.T)
             d1_n = (math.log(self.S_0 / self.K) + (r_n + (sigma_n ** 2) / 2) * self.T) / (sigma_n * math.sqrt(self.T))
             d2_n = d1_n - sigma_n * math.sqrt(self.T)
             Nmind1_n = norm.cdf(-d1_n, 0, 1)  # N(-d1_n)
@@ -271,8 +280,7 @@ class OptionPricerMerton(OptionPricer):
         return s
 
 
-class OptionPricerFourierPricing(OptionPricer):
-    # Here lie the characteristic functions:
+class OptionPricerFourier2(OptionPricer):
 
     def __init__(self, S_0: float, K: float, T: int, r: float, sigma: float):
         super().__init__(S_0=S_0, K=K, T=T, r=r, sigma=sigma)
@@ -301,6 +309,55 @@ class OptionPricerFourierPricing(OptionPricer):
     def get_Call(self):
         c = self.get_call_usingFourier(self.Brownian_Motion_cf)
         return c
+
+    def get_call_usingFourier(self, cf):
+        return self.S_0 * self.delta_option(cf) - self.prob2(cf) * self.K * math.exp(-self.r * self.T)
+
+    def Put_parity_fourier(self,
+                           cf):  # searching the price of the put given S_0, K and the call price computed using Fourier
+        c = self.get_call_usingFourier(cf)
+        p = c + self.K * np.exp(-self.r * self.T) - self.S_0
+        return p
+
+    def get_Call_BS_Fourier(self):
+        c = self.get_call_usingFourier(self.Brownian_Motion_cf)
+        return c
+
+    def get_Put_BS_Fourier(self):
+        put = self.Put_parity_fourier(self.Brownian_Motion_cf)
+        return put
+
+
+class OptionPricerHeston(OptionPricerFourier2):
+
+    def __init__(self, S_0: float, K: float, T: int, r: float, sigma: float, rho: float, kappa: float,
+                 eta: float, theta: float):
+        super().__init__(S_0=S_0, K=K, T=T, r=r, sigma=sigma)
+
+        self.sigmainitial = sigma
+        self.rho = rho
+        self.kappa = kappa
+        self.eta = eta
+        self.theta = theta
+
+    def Modified_Heston_cf(self, u):  # as proposed by Shoutens #Not sure if it's the same sigma
+        d = np.sqrt((self.rho * self.theta * u * 1j - self.kappa) ** 2 - self.theta ** 2 * (-1j * u - u ** 2))
+        b = self.kappa - self.rho * self.theta * u * 1j
+        g = (b - d) / (b + d)
+        e1 = np.exp(1j * u * (np.log(self.S_0) + self.r * self.T))
+        e2 = np.exp(self.eta * self.kappa * self.theta ** (-2) * (
+                (b - d) * self.T - 2 * np.log((1 - g * np.exp(-d * self.T)) / (1 - g))))
+        e3 = np.exp(self.sigmainitial ** 2 * self.theta ** (-2) * (
+                (b - d) * (1 - np.exp(-d * self.T)) / (1 - g * np.exp(-d * self.T))))
+        return e1 * e2 * e3
+
+    def get_call(self):
+        c = self.get_call_usingFourier(self.Modified_Heston_cf)
+        return c
+
+    def get_put(self):
+        put = self.Put_parity_fourier(self.Modified_Heston_cf)
+        return put
 
 
 if __name__ == '__main__':

@@ -220,7 +220,7 @@ class OptionAnalysis:
         # Price the option
         priced_calls = self.price_option(calls)
         priced_puts = self.price_option(puts)
-        
+
         # Create the figure
         self.plot(priced_calls, save_fig=True)
         self.plot(priced_puts, save_fig=True)

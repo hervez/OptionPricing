@@ -151,6 +151,10 @@ class TexDocument:
         # compile latex file
         # To create a valid latex code, compilable from any other IDE, the directory must be changed so that the figure
         # path is valid.
+        # An output_file is created to print the pdf latex log
+        output_file = 'output.log'
         os.chdir(self.directory)
-        subprocess.run(['pdflatex', latex_file])
+        with open(output_file, 'w') as log_file:
+            subprocess.run(['pdflatex', latex_file], stdout=log_file, stderr=subprocess.STDOUT)
+        #subprocess.run(['pdflatex', latex_file])
         os.chdir("../../..")

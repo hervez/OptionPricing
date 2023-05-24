@@ -46,7 +46,7 @@ class OptionPricingBlackScholesMerton():
         self.vol = self.sigma*math.sqrt(self.T)
         # Heston 
         self.rHeston = 0.05
-        self.sigmaHeston = 0.1
+        self.sigmainitial = 0.1
         self.rho = -0.8
         self.kappa = 3
         self.eta = 0.1
@@ -109,8 +109,8 @@ class OptionPricingBlackScholesMerton():
         b =  self.kappa-self.rho*self.theta*u*1j
         g = (b - d)/(b + d)
         e1 =  np.exp(1j*u*(np.log(self.S_0) + self.rHeston*self.T))
-        e2 =  np.exp(self.eta*self.kappa*self.sigmaHeston**(-2)*((b-d)*self.T - 2*np.log((1-g*np.exp(-d*self.T))/(1-g))))
-        e3 =  np.exp(self.sigmaHeston**2*self.theta**(-2)*((b-d)*(1-np.exp(-d*self.T))/(1-g*np.exp(-d*self.T))))
+        e2 =  np.exp(self.eta*self.kappa*self.theta**(-2)*((b-d)*self.T - 2*np.log((1-g*np.exp(-d*self.T))/(1-g))))
+        e3 =  np.exp(self.sigmainitial**2*self.theta**(-2)*((b-d)*(1-np.exp(-d*self.T))/(1-g*np.exp(-d*self.T))))
         return e1*e2*e3
     # Here lies the semi-analytical method after founding the characteristic function of ln(ST)
     def delta_option(self, cf): #Need to specify characteristic function

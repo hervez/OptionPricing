@@ -42,6 +42,7 @@ class OptionPricingBlackScholesMerton():
         self.k = math.exp(self.y)-1
         self.lambdaprime = self.lamda*(1+self.k)
         #For Fourier Pricing methods:
+        #For BS basic formula
         self.mu = self.r - 0.5 * (self.sigma**2)*self.T
         self.vol = self.sigma*math.sqrt(self.T)
         # Heston 

@@ -1,5 +1,6 @@
 import datetime
 from typing import List
+from tqdm import tqdm
 
 from OptionDataType import OptionData
 from DataGathering import OptionDataGathering
@@ -78,7 +79,24 @@ class OptionAnalysis:
     def price_option(self, options_list: List[OptionData], verbose: bool = False):
         """ Price the OptionData using the different Pricer """
 
-        for option in options_list:
+        # Merton and Heston model parameter computation
+        Merton_variables = self.gatherer.get_calibration_Merton(self.underlying)
+        alpha = Merton_variables[0]
+        lamda = Merton_variables[1]
+        delta = Merton_variables[2]
+        mu = Merton_variables[3]
+        Msigma = Merton_variables[4]
+
+        Heston_variables = self.gatherer.get_calibration_Heston(self.underlying)
+        mu = Heston_variables[0]
+        rho = Heston_variables[1]
+        kappa = Heston_variables[2]
+        eta = Heston_variables[3]
+        theta = Heston_variables[4]
+
+        print(f"Pricing {options_list[0].option_type}s:")
+
+        for option in tqdm(options_list):
 
             # BS pricing
             pricer = OptionPricerBlackScholes(S_0=option.underlying_price, K=option.strike_price,
@@ -124,41 +142,25 @@ class OptionAnalysis:
                 print("FFT priced")
 
             # Merton pricing
-            Merton_variables = self.gatherer.get_calibration_Merton(self.underlying)
-            alpha = Merton_variables[0]
-            lamda = Merton_variables[1]
-            delta = Merton_variables[2]
-            mu = Merton_variables[3]
-            Msigma = Merton_variables[4]
-
-            for option in options_list:
-                pricer = OptionPricerMerton(S_0=option.underlying_price, K=option.strike_price,
-                                            T=option.time_to_maturity, r=option.risk_free_rate,
-                                            sigma=option.historical_std, alpha=alpha, lamda=lamda, delta=delta, mu=mu,
-                                            Msigma=Msigma)
-                if option.option_type == 'call':
-                    option.Merton_pricing = pricer.get_call()
-                if option.option_type == 'put':
-                    option.Merton_pricing = pricer.get_put()
+            pricer = OptionPricerMerton(S_0=option.underlying_price, K=option.strike_price,
+                                        T=option.time_to_maturity, r=option.risk_free_rate,
+                                        sigma=option.historical_std, alpha=alpha, lamda=lamda, delta=delta, mu=mu,
+                                        Msigma=Msigma)
+            if option.option_type == 'call':
+                option.Merton_pricing = pricer.get_call()
+            if option.option_type == 'put':
+                option.Merton_pricing = pricer.get_put()
             if verbose:
                 print("Merton priced")
 
             # Heston pricing
-            Heston_variables = self.gatherer.get_calibration_Heston(self.underlying)
-            mu = Heston_variables[0]
-            rho = Heston_variables[1]
-            kappa = Heston_variables[2]
-            eta = Heston_variables[3]
-            theta = Heston_variables[4]
-
-            for option in options_list:
-                pricer = OptionPricerHeston(S_0=option.underlying_price, K=option.strike_price,
-                                            T=option.time_to_maturity, r=option.risk_free_rate,
-                                            sigma=option.historical_std, rho=rho, kappa=kappa, eta=eta, theta=theta)
-                if option.option_type == 'call':
-                    option.Heston_pricing = pricer.get_call()
-                if option.option_type == 'put':
-                    option.Heston_pricing = pricer.get_put()
+            pricer = OptionPricerHeston(S_0=option.underlying_price, K=option.strike_price,
+                                        T=option.time_to_maturity, r=option.risk_free_rate,
+                                        sigma=option.historical_std, rho=rho, kappa=kappa, eta=eta, theta=theta)
+            if option.option_type == 'call':
+                option.Heston_pricing = pricer.get_call()
+            if option.option_type == 'put':
+                option.Heston_pricing = pricer.get_put()
             if verbose:
                 print("Heston priced")
 

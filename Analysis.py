@@ -278,7 +278,7 @@ class OptionAnalysis:
             underlying_price = priced_calls[0].underlying_price
             self.tex_document(underlying_price)
             print("Latex document generated")
-            
+
         print("######################################################################################################")
 
 if __name__ == "__main__":

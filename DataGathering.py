@@ -95,6 +95,7 @@ class OptionDataGathering:
             print(
                 "Error: the evaluation date you gave is not in the database. "
                 "Make sure that it is a valid date for faster runtime. "
+                "You can reload the cache to get an up-to-date dataset. "
                 "Here are the last available dates:")
             print(underlying_data['Date'].tail(5))
             if underlying_data['Date'].iloc[-1] < evaluation_datetime:

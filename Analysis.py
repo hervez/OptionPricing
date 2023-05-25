@@ -221,7 +221,7 @@ class OptionAnalysis:
 
                 return False
 
-        except subprocess.CalledProcessError:
+        except FileNotFoundError:
 
             return False
 

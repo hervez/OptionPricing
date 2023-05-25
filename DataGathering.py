@@ -4,6 +4,8 @@ import pandas as pd
 from Utils import *
 import numpy as np
 from arch import arch_model
+import sys
+import os
 
 import ImpliedVolatility
 import Calibration
@@ -65,7 +67,12 @@ class OptionDataGathering:
 
             # Create additional information columns such as the return, log-return and the date in datetime
             data['Return'] = data['Close'].pct_change()
+            # Avoid the numpy error warning about the 0
+            old_settings = np.seterr()
+            np.seterr(divide='ignore', invalid='ignore')
             data['Log_return'] = np.log(data['Close']) - np.log(data['Close'].shift(1))
+            np.seterr(**old_settings)
+
             data['Vol'] = data['Log_return'].rolling(100).std()
             data['Date'] = pd.to_datetime(data.index, errors='coerce', utc=True)
             data = data.dropna(subset=['Date'])
@@ -285,9 +292,14 @@ class OptionDataGathering:
             returns = np.array(self.get_underlying_data(symbol)['Log_return'])
         else:
             returns = np.array(self.get_underlying_data(symbol)['Return'])
+        # Dirty hack to avoid printing the arch_model.fit() iteration warning since the show_warning is broken
+        old_stdout = sys.stdout  # backup current stdout
+        sys.stdout = open(os.devnull, "w")
         returns = returns[~np.isnan(returns)]
-        model = arch_model(returns, vol="GARCH", p=1, q=1)
-        return model.fit().conditional_volatility
+        model = arch_model(returns, vol="GARCH", p=1, q=1, rescale=False)
+        fit = model.fit(show_warning=False).conditional_volatility
+        sys.stdout = old_stdout  # reset old stdout
+        return fit
 
     def get_calibration_Merton(self, symbol):
         """ Get the calibration for an asset for the Merton model """
@@ -299,7 +311,7 @@ class OptionDataGathering:
             variables = np.genfromtxt(file_path, delimiter=',')
             if self.verbose:
                 print("Merton model parameters obtained from the cache.")
-        except FileNotFoundError:
+        except OSError:
             # Get the log returns to calibrate and their GARCH volatility
             log_returns = np.array(self.get_underlying_data(symbol)['Log_return'])
             log_returns = log_returns[~np.isnan(log_returns)]
@@ -307,12 +319,12 @@ class OptionDataGathering:
 
             # Get the calibration for the Merton model
             calibrator = Calibration.CalibrateVanilla(log_returns, volatility)
-            variables = np.array(calibrator.Mertoncalibrate())
+            variables = np.array(calibrator.merton_calibrate())
             if self.verbose:
                 print('Computed the Merton model parameters.')
             if self.save_data:
                 np.savetxt(file_path, variables, delimiter=",")
-                if self.save_data:
+                if self.verbose:
                     print(f"Merton model parameters saved under {file_path}")
 
         return variables
@@ -327,7 +339,7 @@ class OptionDataGathering:
             variables = np.genfromtxt(file_path, delimiter=',')
             if self.verbose:
                 print("Heston model parameters obtained from the cache.")
-        except FileNotFoundError:
+        except OSError:
             # Get the log returns to calibrate and their GARCH volatility
             log_returns = np.array(self.get_underlying_data(symbol)['Log_return'])
             log_returns = log_returns[~np.isnan(log_returns)]
@@ -335,7 +347,7 @@ class OptionDataGathering:
 
             # Get the calibration for the Merton model
             calibrator = Calibration.CalibrateVanilla(log_returns, volatility)
-            variables = np.array(calibrator.HestonCalibrate())
+            variables = np.array(calibrator.heston_calibrate())
             if self.verbose:
                 print('Computed the Heston model parameters.')
             if self.save_data:

@@ -15,7 +15,7 @@ def stochastic_vol(returns):
     BUT you need to have time series, you cannot just pick any random sample
     """
     model = arch_model(returns, vol='Garch', p=1, q=1)
-    results = model.fit()
+    results = model.fit(show_warning=False)
     volatility = results.conditional_volatility
     return volatility
 

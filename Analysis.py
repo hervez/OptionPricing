@@ -1,6 +1,6 @@
 import datetime
 from typing import List
-from tqdm import tqdm
+import subprocess
 from alive_progress import alive_bar
 
 from OptionDataType import OptionData
@@ -203,6 +203,28 @@ class OptionAnalysis:
                             underlying_price=underlying_price)
         texer.generate_document()
 
+    @staticmethod
+    def check_pdflatex_installed():
+        """ Verify that pdflatex is installed on the system """
+
+        try:
+            # Run pdflatex with the "--version" argument and capture the output
+            output = subprocess.check_output(['pdflatex', '--version'], stderr=subprocess.STDOUT,
+                                             universal_newlines=True)
+
+            # Check if pdflatex output contains a known version string
+            if 'pdfTeX' in output:
+
+                return True
+
+            else:
+
+                return False
+
+        except subprocess.CalledProcessError:
+
+            return False
+
     def complete_analysis(self):
         """ Does a complete analysis by getting the option list, pricing it, generating the graphs and the LaTex
         document """
@@ -221,32 +243,42 @@ class OptionAnalysis:
         priced_calls = self.price_option(calls)
         priced_puts = self.price_option(puts)
 
+        # Check that pdflatex is installed
+        installed_pdflatex = self.check_pdflatex_installed()
+        if installed_pdflatex:
+            save_fig = True
+        else:
+            save_fig = False
+            print("Error: pdflatex is not installed on this system."
+                  "Please install it to obtain the output in a pdf file.")
+
         # Create the figure
-        self.plot(priced_calls, save_fig=True)
-        self.plot(priced_puts, save_fig=True)
+        self.plot(priced_calls, save_fig=save_fig)
+        self.plot(priced_puts, save_fig=save_fig)
 
         # Create the individual figures
-        self.plot(priced_calls, save_fig=True, pricer="BS")
-        self.plot(priced_calls, save_fig=True, pricer="CRR")
-        self.plot(priced_calls, save_fig=True, pricer="Fourier")
-        self.plot(priced_calls, save_fig=True, pricer="FFT")
-        self.plot(priced_calls, save_fig=True, pricer="Merton")
-        self.plot(priced_calls, save_fig=True, pricer="Heston")
+        self.plot(priced_calls, save_fig=save_fig, pricer="BS")
+        self.plot(priced_calls, save_fig=save_fig, pricer="CRR")
+        self.plot(priced_calls, save_fig=save_fig, pricer="Fourier")
+        self.plot(priced_calls, save_fig=save_fig, pricer="FFT")
+        self.plot(priced_calls, save_fig=save_fig, pricer="Merton")
+        self.plot(priced_calls, save_fig=save_fig, pricer="Heston")
 
-        self.plot(priced_puts, save_fig=True, pricer="BS")
-        self.plot(priced_puts, save_fig=True, pricer="CRR")
-        self.plot(priced_puts, save_fig=True, pricer="Fourier")
-        self.plot(priced_puts, save_fig=True, pricer="FFT")
-        self.plot(priced_puts, save_fig=True, pricer="Merton")
-        self.plot(priced_puts, save_fig=True, pricer="Heston")
+        self.plot(priced_puts, save_fig=save_fig, pricer="BS")
+        self.plot(priced_puts, save_fig=save_fig, pricer="CRR")
+        self.plot(priced_puts, save_fig=save_fig, pricer="Fourier")
+        self.plot(priced_puts, save_fig=save_fig, pricer="FFT")
+        self.plot(priced_puts, save_fig=save_fig, pricer="Merton")
+        self.plot(priced_puts, save_fig=save_fig, pricer="Heston")
 
         print("Figures created")
 
         # Generate the tex document
-        underlying_price = priced_calls[0].underlying_price
-        self.tex_document(underlying_price)
-
-        print("Latex document generated")
+        if installed_pdflatex:
+            underlying_price = priced_calls[0].underlying_price
+            self.tex_document(underlying_price)
+            print("Latex document generated")
+            
         print("######################################################################################################")
 
 if __name__ == "__main__":

@@ -75,19 +75,20 @@ class OptionGraphicalAnalysis:
             sns.scatterplot(x=strikes, y=estimated_Merton_price, ax=ax, label='Merton estimated prices')
             sns.scatterplot(x=strikes, y=estimated_Heston_price, ax=ax, label='Heston estimated prices')
         else:
-            match pricer:
-                case "BS":
-                    color = sns.color_palette()[1]
-                case "CRR":
-                    color = sns.color_palette()[2]
-                case "Fourier":
-                    color = sns.color_palette()[3]
-                case "FFT":
-                    color = sns.color_palette()[4]
-                case "Merton":
-                    color = sns.color_palette()[5]
-                case "Heston":
-                    color = sns.color_palette()[6]
+            # A match - case statement would have been preferable here, but Nuvolos has python3.8.13 and these are
+            # only available for python3.10
+            if pricer == "BS":
+                color = sns.color_palette()[1]
+            if pricer == "CRR":
+                color = sns.color_palette()[2]
+            if pricer == "Fourier":
+                color = sns.color_palette()[3]
+            if pricer == "FFT":
+                color = sns.color_palette()[4]
+            if pricer == "Merton":
+                color = sns.color_palette()[5]
+            if pricer == "Heston":
+                color = sns.color_palette()[6]
             sns.scatterplot(x=strikes, y=estimated_price, ax=ax, label= f"{pricer} estimated prices", color=color)
 
         # Set the title and axis labels

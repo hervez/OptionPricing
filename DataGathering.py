@@ -43,7 +43,7 @@ class OptionDataGathering:
 
         return underlying_data
 
-    def get_underlying_data(self, symbol: str, period: str = '10y'):
+    def get_underlying_data(self, symbol: str, evaluation_date: str, period: str = '10y'):
         """Get the underlying data, either from the web or the locale memory if they have already been queried."""
 
         # Create a folder to save the data
@@ -51,7 +51,7 @@ class OptionDataGathering:
             folder_creation('results/{}'.format(symbol), self.verbose)
 
         # Gather the data from the file system or from the web if it is not there
-        path = './results/{}/{}_data.csv'.format(symbol, symbol)
+        path = './results/{}/{}_{}_data.csv'.format(symbol, symbol, evaluation_date)
         try:
             if self.reload:
                 raise FileNotFoundError("Reloading the data from the web")
@@ -91,7 +91,7 @@ class OptionDataGathering:
         """ returns: an asset price given by its symbol at a given evaluation date """
 
         # Get the asset complete data
-        underlying_data = self.get_underlying_data(symbol)
+        underlying_data = self.get_underlying_data(symbol, evaluation_date)
         evaluation_datetime = datetime.strptime(evaluation_date, '%Y-%m-%d').date()
         # Get the asset price at the given evaluation date or at the closest valid date.
         try:
@@ -150,7 +150,7 @@ class OptionDataGathering:
 
         return option_data
 
-    def get_option_data(self, symbol, option_type, expiration_date):
+    def get_option_data(self, symbol: str, option_type: str, expiration_date: str, evaluation_date: str):
         """Get the option data, either from the web or the locale memory if they have already been queried."""
 
         # Create the folder to save the data
@@ -160,7 +160,7 @@ class OptionDataGathering:
         # Check the option type
         if not option_type == 'call' and not option_type == 'put':
             raise ValueError('Invalid option type. Must be "call" or "put".')
-        file_path = './results/{}/{}_{}'.format(symbol, option_type, expiration_date)
+        file_path = './results/{}/{}_{}_{}'.format(symbol, option_type, evaluation_date, expiration_date)
 
         # Load the option data
         try:
@@ -180,10 +180,18 @@ class OptionDataGathering:
 
         return data
 
-    def get_risk_free_rates(self):
+    def get_dates_available_option(self, symbol):
+        """ Return all the dates for which options are available """
+
+        ticker = yf.Ticker(symbol)
+        options_dates = ticker.options
+
+        return options_dates
+
+    def get_risk_free_rates(self, evaluation_date):
         """ Return and save a dataframe of the historical yields of the 13 weeks treasury bill """
 
-        path = './results/^IRX/INT_^IRX_data.csv'
+        path = f'./results/^IRX/INT_^IRX_data_{evaluation_date}.csv'
         try:
             if self.reload:
                 raise FileNotFoundError("Reloading the data from the web")
@@ -194,7 +202,7 @@ class OptionDataGathering:
             if self.verbose:
                 print('Interpolated ^IRX data recovered from: ' + path)
         except FileNotFoundError:
-            raw_data = self.get_underlying_data('^IRX', '15y')
+            raw_data = self.get_underlying_data('^IRX', evaluation_date, '15y')
             start_date = raw_data['Date'].iloc[0]
             end_date = raw_data['Date'].iloc[-1]
             date_range = pd.date_range(start=start_date, end=end_date, freq='D')
@@ -215,7 +223,7 @@ class OptionDataGathering:
     def get_risk_free_rate(self, evaluation_date: str):
         """ Get the risk-free rate of the 13 weeks treasury bill at a given evaluation date"""
 
-        risk_free_data = self.get_risk_free_rates()
+        risk_free_data = self.get_risk_free_rates(evaluation_date)
         evaluation_datetime = datetime.strptime(evaluation_date, '%Y-%m-%d').date()
 
         try:
@@ -247,10 +255,10 @@ class OptionDataGathering:
 
         return risk_free_rate_at_evaluation_date / 365
 
-    def get_historical_volatilities(self, symbol: str):
+    def get_historical_volatilities(self, symbol: str, evaluation_date: str):
         """ Return the historical volatility of the price of the underlying at the close """
 
-        underlying_data = self.get_underlying_data(symbol)
+        underlying_data = self.get_underlying_data(symbol, evaluation_date)
         historical_volatilities = pd.DataFrame()
         historical_volatilities['Date'] = underlying_data['Date']
         historical_volatilities['Vol'] = underlying_data['Log_return'].rolling(100).std()
@@ -260,7 +268,7 @@ class OptionDataGathering:
     def get_historical_volatility(self, symbol: str, evaluation_date: str):
         """ Return the historical volatility at the valuation date """
 
-        historical_volatilities = self.get_underlying_data(symbol)
+        historical_volatilities = self.get_underlying_data(symbol, evaluation_date)
         if self.closest_evaluation_date is None:
             historical_volatility_at_evaluation_date = \
                 historical_volatilities.loc[
@@ -273,25 +281,13 @@ class OptionDataGathering:
 
         return historical_volatility_at_evaluation_date
 
-    def get_implied_volatility(self, symbol, strike, expiration_date, option_type='call'):
-        """ Get the implied volatility internally computed. WARNING: very time-consuming, only works for AAPL """
-
-        list_underlying_iv = ['AAPL']
-        if symbol in list_underlying_iv:
-            time_to_maturity = self.time_to_maturity(expiration_date)
-            iv = ImpliedVolatility.OptionImpliedVolatility(symbol).get_implied_volatility(strike, time_to_maturity)
-        else:
-            print("Error: there is no data to compute the implied volatility for this asset.")
-            iv = self.SigmaFromIv(symbol, strike, expiration_date, option_type)
-
-        return iv
-
-    def get_GARCH_volatility(self, symbol, log_return: bool = True):
+    def get_GARCH_volatility(self, symbol, evaluation_date: str, log_return: bool = True):
+        """ Function to compute the GARCH volatility of an asset """
 
         if log_return:
-            returns = np.array(self.get_underlying_data(symbol)['Log_return'])
+            returns = np.array(self.get_underlying_data(symbol, evaluation_date )['Log_return'])
         else:
-            returns = np.array(self.get_underlying_data(symbol)['Return'])
+            returns = np.array(self.get_underlying_data(symbol, evaluation_date)['Return'])
         # Dirty hack to avoid printing the arch_model.fit() iteration warning since the show_warning is broken
         old_stdout = sys.stdout  # backup current stdout
         sys.stdout = open(os.devnull, "w")
@@ -301,7 +297,7 @@ class OptionDataGathering:
         sys.stdout = old_stdout  # reset old stdout
         return fit
 
-    def get_calibration_Merton(self, symbol):
+    def get_calibration_Merton(self, symbol: str, evaluation_date: str):
         """ Get the calibration for an asset for the Merton model """
 
         # Create a file path to load the cache
@@ -313,9 +309,9 @@ class OptionDataGathering:
                 print("Merton model parameters obtained from the cache.")
         except OSError:
             # Get the log returns to calibrate and their GARCH volatility
-            log_returns = np.array(self.get_underlying_data(symbol)['Log_return'])
+            log_returns = np.array(self.get_underlying_data(symbol, evaluation_date)['Log_return'])
             log_returns = log_returns[~np.isnan(log_returns)]
-            volatility = self.get_GARCH_volatility(symbol)
+            volatility = self.get_GARCH_volatility(symbol, evaluation_date)
 
             # Get the calibration for the Merton model
             calibrator = Calibration.CalibrateVanilla(log_returns, volatility)
@@ -329,7 +325,7 @@ class OptionDataGathering:
 
         return variables
 
-    def get_calibration_Heston(self, symbol):
+    def get_calibration_Heston(self, symbol, evaluation_date):
         """ Get the calibration for an asset for the Merton model """
 
         # Create a file path to load the cache
@@ -341,9 +337,9 @@ class OptionDataGathering:
                 print("Heston model parameters obtained from the cache.")
         except OSError:
             # Get the log returns to calibrate and their GARCH volatility
-            log_returns = np.array(self.get_underlying_data(symbol)['Log_return'])
+            log_returns = np.array(self.get_underlying_data(symbol, evaluation_date)['Log_return'])
             log_returns = log_returns[~np.isnan(log_returns)]
-            volatility = self.get_GARCH_volatility(symbol)
+            volatility = self.get_GARCH_volatility(symbol, evaluation_date)
 
             # Get the calibration for the Merton model
             calibrator = Calibration.CalibrateVanilla(log_returns, volatility)
@@ -357,10 +353,22 @@ class OptionDataGathering:
 
         return variables
 
-    def SigmaFromIv(self, symbol, strike, expiration_date, option_type):
-        """ K(strike price) needs to be precised here """
-        # K = float(input("choose a strike price"))
-        donnees = self.get_option_data(symbol, option_type, expiration_date)
+    def get_implied_volatility(self, symbol, strike, expiration_date, evaluation_date, option_type='call'):
+        """ Get the implied volatility internally computed. WARNING: very time-consuming, only works for AAPL """
+
+        list_underlying_iv = ['AAPL']
+        if symbol in list_underlying_iv:
+            time_to_maturity = self.time_to_maturity(expiration_date)
+            iv = ImpliedVolatility.OptionImpliedVolatility(symbol).get_implied_volatility(strike, time_to_maturity)
+        else:
+            print("Error: there is no data to compute the implied volatility for this asset.")
+            iv = self.SigmaFromIv(symbol, strike, expiration_date, evaluation_date, option_type)
+
+        return iv
+
+    def SigmaFromIv(self, symbol, strike, expiration_date, evaluation_date, option_type):
+
+        donnees = self.get_option_data(symbol, option_type, expiration_date, evaluation_date)
         row = donnees[donnees['strike'] == strike]
         if row.empty:
             print("No data found for the strike price of {}, try to find another mesure for sigma".format(strike))

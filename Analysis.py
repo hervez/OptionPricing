@@ -28,7 +28,7 @@ class OptionAnalysis:
 
         self.underlying = underlying
         self.expiration_date = expiration_date
-        self.gatherer = OptionDataGathering(verbose=False, reload=False)
+        self.gatherer = OptionDataGathering(verbose=True, reload=False)
         self.evaluation_date = evaluation_date
         self.ploter = OptionGraphicalAnalysis(self.underlying)
 
@@ -42,7 +42,7 @@ class OptionAnalysis:
         historical_volatility = self.gatherer.get_historical_volatility(self.underlying, self.evaluation_date)
 
         # Get the option from DataGatherer in a dataframe
-        option_df = self.gatherer.get_option_data(self.underlying, option_type, self.expiration_date)
+        option_df = self.gatherer.get_option_data(self.underlying, option_type, self.expiration_date, self.evaluation_date)
 
         # Generate the list of OptionData
         option_list = []
@@ -81,14 +81,14 @@ class OptionAnalysis:
         """ Price the OptionData using the different Pricer """
 
         # Merton and Heston model parameter computation
-        Merton_variables = self.gatherer.get_calibration_Merton(self.underlying)
+        Merton_variables = self.gatherer.get_calibration_Merton(self.underlying, self.evaluation_date)
         alpha = Merton_variables[0]
         lamda = Merton_variables[1]
         delta = Merton_variables[2]
         mu = Merton_variables[3]
         Msigma = Merton_variables[4]
 
-        Heston_variables = self.gatherer.get_calibration_Heston(self.underlying)
+        Heston_variables = self.gatherer.get_calibration_Heston(self.underlying, self.evaluation_date)
         mu = Heston_variables[0]
         rho = Heston_variables[1]
         kappa = Heston_variables[2]
@@ -114,7 +114,7 @@ class OptionAnalysis:
                 # CRR pricing
                 pricerCRR = OptionPricerCRR(S_0=option.underlying_price, K=option.strike_price,
                                             T=option.time_to_maturity, r=option.risk_free_rate,
-                                            sigma=option.historical_std, M=10*option.time_to_maturity)
+                                            sigma=option.historical_std, M=100)
                 if option.option_type == 'call':
                     option.CRR_pricing = pricerCRR.get_call()
                 if option.option_type == 'put':
@@ -240,8 +240,8 @@ class OptionAnalysis:
         print("Options gathered")
 
         # Price the option
-        priced_calls = self.price_option(calls)
-        priced_puts = self.price_option(puts)
+        priced_calls = self.price_option(calls, verbose=False)
+        priced_puts = self.price_option(puts, verbose=False)
 
         # Check that pdflatex is installed
         installed_pdflatex = self.check_pdflatex_installed()
@@ -280,6 +280,7 @@ class OptionAnalysis:
             print("Latex document generated")
 
         print("######################################################################################################")
+
 
 if __name__ == "__main__":
     analyser = OptionAnalysis(expiration_date='2023-05-26', evaluation_date='2023-05-22')

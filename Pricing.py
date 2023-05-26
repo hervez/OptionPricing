@@ -243,9 +243,9 @@ class OptionPricerMerton(OptionPricer):
         Fpoisson = 0
         i = 0
         s = 0
-        while Fpoisson < 0.95:  # 0.999 is arbitrary, the closer to 1, the better, but it becomes computationally expensive
+        while Fpoisson < 0.95:  # 0.95 is arbitrary, the closer to 1, the better, but it becomes computationally expensive
             # I calculate the probability that the number of jumps = i, then sigma_n and r_n, and put
-            # them in the Black and Scholes formula and I get the sum of P(N=i)*(BSCall) from 0 to
+            # them in the Black and Scholes formula and I get the sum of P(N=i)*(BSCall) from i=0 to
             # a large enough number
             fpoisson = (self.lambdaprime * self.T) ** i * (math.e ** (-self.lambdaprime * self.T)) / math.factorial(i)
             Fpoisson += fpoisson
@@ -331,14 +331,15 @@ class OptionPricerFourier2(OptionPricer):
 class OptionPricerHeston(OptionPricerFourier2):
 
     def __init__(self, S_0: float, K: float, T: int, r: float, sigma: float, rho: float, kappa: float,
-                 eta: float, theta: float):
+                 eta: float, theta: float, spotvol:float):
         super().__init__(S_0=S_0, K=K, T=T, r=r, sigma=sigma)
 
-        self.sigmainitial = sigma
+        self.sigmainitial = sigma #is actually useless
         self.rho = rho
         self.kappa = kappa
         self.eta = eta
         self.theta = theta
+        self.spotvol = spotvol
 
     def Modified_Heston_cf(self, u):  # as proposed by Shoutens #Not sure if it's the same sigma
         d = np.sqrt((self.rho * self.theta * u * 1j - self.kappa) ** 2 - self.theta ** 2 * (-1j * u - u ** 2))
@@ -347,7 +348,7 @@ class OptionPricerHeston(OptionPricerFourier2):
         e1 = np.exp(1j * u * (np.log(self.S_0) + self.r * self.T))
         e2 = np.exp(self.eta * self.kappa * self.theta ** (-2) * (
                 (b - d) * self.T - 2 * np.log((1 - g * np.exp(-d * self.T)) / (1 - g))))
-        e3 = np.exp(self.sigmainitial ** 2 * self.theta ** (-2) * (
+        e3 = np.exp(self.spotvol ** 2 * self.theta ** (-2) * (
                 (b - d) * (1 - np.exp(-d * self.T)) / (1 - g * np.exp(-d * self.T))))
         return e1 * e2 * e3
 

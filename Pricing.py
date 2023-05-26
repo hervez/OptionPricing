@@ -331,7 +331,7 @@ class OptionPricerFourier2(OptionPricer):
 class OptionPricerHeston(OptionPricerFourier2):
 
     def __init__(self, S_0: float, K: float, T: int, r: float, sigma: float, rho: float, kappa: float,
-                 eta: float, theta: float,): #spotvol:float):
+                 eta: float, theta: float, spotvol:float):
         super().__init__(S_0=S_0, K=K, T=T, r=r, sigma=sigma)
 
         self.sigmainitial = sigma
@@ -339,7 +339,7 @@ class OptionPricerHeston(OptionPricerFourier2):
         self.kappa = kappa
         self.eta = eta
         self.theta = theta
-        #self.spotvol = spotvol
+        self.spotvol = spotvol
 
     def Modified_Heston_cf(self, u):  # as proposed by Shoutens #Not sure if it's the same sigma
         d = np.sqrt((self.rho * self.theta * u * 1j - self.kappa) ** 2 - self.theta ** 2 * (-1j * u - u ** 2))
@@ -348,7 +348,7 @@ class OptionPricerHeston(OptionPricerFourier2):
         e1 = np.exp(1j * u * (np.log(self.S_0) + self.r * self.T))
         e2 = np.exp(self.eta * self.kappa * self.theta ** (-2) * (
                 (b - d) * self.T - 2 * np.log((1 - g * np.exp(-d * self.T)) / (1 - g))))
-        e3 = np.exp(self.sigmainitial ** 2 * self.theta ** (-2) * (
+        e3 = np.exp(self.spotvol ** 2 * self.theta ** (-2) * (
                 (b - d) * (1 - np.exp(-d * self.T)) / (1 - g * np.exp(-d * self.T))))
         return e1 * e2 * e3
 

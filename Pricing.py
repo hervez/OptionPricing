@@ -334,7 +334,7 @@ class OptionPricerHeston(OptionPricerFourier2):
                  eta: float, theta: float, spotvol:float):
         super().__init__(S_0=S_0, K=K, T=T, r=r, sigma=sigma)
 
-        self.sigmainitial = sigma
+        self.sigmainitial = sigma #is actually useless
         self.rho = rho
         self.kappa = kappa
         self.eta = eta

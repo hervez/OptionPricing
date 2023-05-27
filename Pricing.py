@@ -279,6 +279,7 @@ class OptionPricerMerton(OptionPricer):
             Nmind2_n = norm.cdf(-d2_n, 0, 1)  # N(-d2_n)
             p_n = self.K * Nmind2_n * math.e ** (-r_n * self.T) - self.S_0 * Nmind1_n
             s += p_n * fpoisson
+            i += 1
         return s
 
 

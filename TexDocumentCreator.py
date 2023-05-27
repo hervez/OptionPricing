@@ -137,7 +137,7 @@ class TexDocument:
             os.makedirs(self.directory)
 
         # Check if the figures were correctly generated
-        if not os.path.exists(f"{self.directory}/figures/figure_price_strike_put.pgf") and not os.path.exists(
+        if not os.path.exists(f"{self.directory}/figures/figure_price_strike_put.png") and not os.path.exists(
                 f"{self.directory}/figures/figure_price_strike_put.pgf"):
             print("Error: the figures were not generated for the Latex file.")
             sys.exit(1)

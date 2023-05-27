@@ -28,12 +28,17 @@ class OptionAnalysis:
 
         self.underlying = underlying
         self.expiration_date = expiration_date
-        self.gatherer = OptionDataGathering(verbose=True, reload=False)
+        self.gatherer = OptionDataGathering(verbose=False, reload=False)
         self.evaluation_date = evaluation_date
         self.ploter = OptionGraphicalAnalysis(self.underlying)
 
     def get_options(self, option_type: str = 'call'):
-        """ Collect the option in a list of OptionData for a better access """
+        """
+        Collect the option in a list of OptionData for a better access
+
+        Args:
+            option_type: either call or put
+        """
 
         # Gather the parameter common to each option
         underlying_price = self.gatherer.get_underlying_value_at_evaluation_date(self.underlying, self.evaluation_date)
@@ -67,7 +72,12 @@ class OptionAnalysis:
         return option_list
 
     def estimate_implied_volatility(self, options_list: List[OptionData]):
-        """ Add the estimated volatility data to the OptionData in the option list. WARNING: very time-consuming!"""
+        """
+        Add the estimated volatility data to the OptionData in the option list. WARNING: very time-consuming!
+
+        Args:
+            options_list: list containing the OptionData, use the get_options function for it
+        """
 
         implied_vol_surface = OptionImpliedVolatility(self.underlying)
         for option in options_list:
@@ -78,7 +88,13 @@ class OptionAnalysis:
         return options_list
 
     def price_option(self, options_list: List[OptionData], verbose: bool = False):
-        """ Price the OptionData using the different Pricer """
+        """
+        Price the OptionData using the different Pricer
+
+        Args:
+            options_list: list containing the OptionData, use the get_options function for it
+            verbose: if True print when a pricing is done
+        """
 
         # Merton and Heston model parameter computation
         Merton_variables = self.gatherer.get_calibration_Merton(self.underlying, self.evaluation_date)
@@ -94,6 +110,7 @@ class OptionAnalysis:
         kappa = Heston_variables[2]
         eta = Heston_variables[3]
         theta = Heston_variables[4]
+        spotvol = Heston_variables[5]
 
         print(f"Pricing {options_list[0].option_type}s:")
 
@@ -158,7 +175,8 @@ class OptionAnalysis:
                 # Heston pricing
                 pricer = OptionPricerHeston(S_0=option.underlying_price, K=option.strike_price,
                                             T=option.time_to_maturity, r=option.risk_free_rate,
-                                            sigma=option.historical_std, rho=rho, kappa=kappa, eta=eta, theta=theta)
+                                            sigma=option.historical_std, rho=rho, kappa=kappa, eta=eta, theta=theta,
+                                            spotvol=spotvol)
                 if option.option_type == 'call':
                     option.Heston_pricing = pricer.get_call()
                 if option.option_type == 'put':
@@ -173,31 +191,62 @@ class OptionAnalysis:
 
 
     def pricing_test(self, options_list):
-        """ Function to test if a Pricer works correctly. Used for development only """
+        """
+        Function to test if a Pricer works correctly. Used for development only
+
+        Args:
+            options_list: list containing the OptionData, use the get_options function for it
+        """
+
+        Merton_variables = self.gatherer.get_calibration_Merton(self.underlying, self.evaluation_date)
+        alpha = Merton_variables[0]
+        lamda = Merton_variables[1]
+        delta = Merton_variables[2]
+        mu = Merton_variables[3]
+        Msigma = Merton_variables[4]
 
         for option in options_list:
-            pricerCRR = OptionPricerCRR(S_0=option.underlying_price, K=option.strike_price,
+            pricer = OptionPricerMerton(S_0=option.underlying_price, K=option.strike_price,
                                         T=option.time_to_maturity, r=option.risk_free_rate,
-                                        sigma=option.historical_std, M=10 * option.time_to_maturity)
+                                        sigma=option.historical_std, alpha=alpha, lamda=lamda, delta=delta, mu=mu,
+                                        Msigma=Msigma)
             if option.option_type == 'call':
-                option.CRR_pricing = pricerCRR.get_call()
+                option.Merton_pricing = pricer.get_call()
             if option.option_type == 'put':
-                option.CRR_pricing = pricerCRR.get_put()
+                option.Merton_pricing = pricer.get_put()
+            print("Merton priced")
 
         return options_list
 
     def plot(self, option_list: List[OptionData], save_fig=False, pricer: str = None):
-        """ Create a plot of the predicted price and the actual price of the OptionData """
+        """
+        Create a plot of the predicted price and the actual price of the OptionData
+
+        Args:
+            options_list: list containing the OptionData, use the get_options function for it
+            save_fig: if false only show the figure, if true save them in the appropriate directory
+            pricer: name of the pricer used. If not given, then all the estimated prices from all the pricer are plotted
+        """
 
         self.ploter.plot_price_strikes(option_list=option_list, save_fig=save_fig, pricer=pricer)
 
     def plot_iv(self, option_list: List[OptionData]):
-        """ Plot the implied volatility of the OptionData """
+        """
+        Plot the implied volatility of the OptionData
+
+        Args:
+            options_list: list containing the OptionData, use the get_options function for it
+        """
 
         self.ploter.plot_implied_volatility_2D(option_list)
 
     def tex_document(self, underlying_price: float):
-        """ Generate the LaTex document containing the result of the code """
+        """
+        Generate the LaTex document containing the result of the code
+
+        Args:
+            underlyingg_price: price of the underlying asset
+        """
 
         texer = TexDocument(self.underlying, self.evaluation_date, self.expiration_date,
                             underlying_price=underlying_price)
@@ -283,18 +332,18 @@ class OptionAnalysis:
 
 
 if __name__ == "__main__":
-    analyser = OptionAnalysis(expiration_date='2023-05-26', evaluation_date='2023-05-22')
-    analyser.complete_analysis()
+    analyser = OptionAnalysis(expiration_date='2023-06-09', evaluation_date='2023-05-27')
+    #analyser.complete_analysis()
     # print(analyser.underlying)time_to_maturity
-    #options = analyser.get_options()
+    # options = analyser.get_options()
 
     # options_iv = analyser.estimate_implied_volatility(options)
 
-    #priced_options = analyser.pricing_test(options)
+    # priced_options = analyser.pricing_test(options)
     # priced_options = analyser.price_option(options)
     #print(priced_options[5])
-    #for option in priced_options:
-    #    print(option)
+    # for option in priced_options:
+    #     print(option)
     #analyser.plot(priced_options, False, 'CRR')
     #analyser.plot_iv(options_iv)
     # analyser.TexDocument()

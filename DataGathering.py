@@ -44,7 +44,15 @@ class OptionDataGathering:
         return underlying_data
 
     def get_underlying_data(self, symbol: str, evaluation_date: str, period: str = '10y'):
-        """Get the underlying data, either from the web or the locale memory if they have already been queried."""
+        """
+        Get the underlying data, either from the web or the locale memory if they have already been queried.
+
+        Args:
+            symbol: four or five letters unique identifier to find the underlying asset. See the Yahoo Finance
+            website for valid symbols
+            evaluation_date: date at which the pricing is done, is necessary to get up-to-date data
+            period: period over which the data is collected
+        """
 
         # Create a folder to save the data
         if self.save_data:
@@ -88,7 +96,14 @@ class OptionDataGathering:
         return data
 
     def get_underlying_value_at_evaluation_date(self, symbol: str, evaluation_date: str):
-        """ returns: an asset price given by its symbol at a given evaluation date """
+        """
+        returns: an asset price given by its symbol at a given evaluation date
+
+         Args:
+             symbol: four or five letters unique identifier to find the underlying asset. See the Yahoo Finance
+             website for valid symbols
+             evaluation_date: date at which the pricing is done, is necessary to get up-to-date data
+         """
 
         # Get the asset complete data
         underlying_data = self.get_underlying_data(symbol, evaluation_date)
@@ -136,7 +151,15 @@ class OptionDataGathering:
 
     @staticmethod
     def download_option_data(symbol: str, option_type: str, expiration_date: str):
-        """Download the option data using the yfinance library."""
+        """
+        Download the option data using the yfinance library.
+
+        Args:
+            symbol: four or five letters unique identifier to find the underlying asset. See the Yahoo Finance
+            website for valid symbols
+            option_type: call or put
+            expiration_date: date at which the options can be exercised
+        """
 
         ticker = yf.Ticker(symbol)
         option_chain = ticker.option_chain(expiration_date)
@@ -151,7 +174,16 @@ class OptionDataGathering:
         return option_data
 
     def get_option_data(self, symbol: str, option_type: str, expiration_date: str, evaluation_date: str):
-        """Get the option data, either from the web or the locale memory if they have already been queried."""
+        """
+        Get the option data, either from the web or the locale memory if they have already been queried.
+
+        Args:
+            symbol: four or five letters unique identifier to find the underlying asset. See the Yahoo Finance
+            website for valid symbols
+            option_type: call or put
+            expiration_date: date at which the options can be exercised
+            evaluation_date: date at which the options are priced, necessary for up to date data
+        """
 
         # Create the folder to save the data
         if self.save_data:
@@ -181,7 +213,13 @@ class OptionDataGathering:
         return data
 
     def get_dates_available_option(self, symbol):
-        """ Return all the dates for which options are available """
+        """
+        Return all the dates for which options are available
+
+        Args:
+            symbol: four or five letters unique identifier to find the underlying asset. See the Yahoo Finance
+            website for valid symbols
+        """
 
         ticker = yf.Ticker(symbol)
         options_dates = ticker.options
@@ -189,7 +227,12 @@ class OptionDataGathering:
         return options_dates
 
     def get_risk_free_rates(self, evaluation_date):
-        """ Return and save a dataframe of the historical yields of the 13 weeks treasury bill """
+        """
+        Return and save a dataframe of the historical yields of the 13 weeks treasury bill
+
+        Args:
+            evaluation_date: date at which the risk-free rate is queried, necessary for up-to-date data
+        """
 
         path = f'./results/^IRX/INT_^IRX_data_{evaluation_date}.csv'
         try:
@@ -221,7 +264,12 @@ class OptionDataGathering:
         return interpolated_risk_free_data
 
     def get_risk_free_rate(self, evaluation_date: str):
-        """ Get the risk-free rate of the 13 weeks treasury bill at a given evaluation date"""
+        """
+        Get the risk-free rate of the 13 weeks treasury bill at a given evaluation date
+
+        Args:
+            evaluation_date: date at which the risk-free rate is queried, necessary for up-to-date data
+        """
 
         risk_free_data = self.get_risk_free_rates(evaluation_date)
         evaluation_datetime = datetime.strptime(evaluation_date, '%Y-%m-%d').date()
@@ -253,10 +301,19 @@ class OptionDataGathering:
             else:
                 risk_free_rate_at_evaluation_date = risk_free_data['Date'].iloc[0]
 
-        return risk_free_rate_at_evaluation_date / 365
+        risk_free_rate_at_evaluation_date = (1 + (risk_free_rate_at_evaluation_date / 100)) ** (1/365) - 1
+
+        return risk_free_rate_at_evaluation_date
 
     def get_historical_volatilities(self, symbol: str, evaluation_date: str):
-        """ Return the historical volatility of the price of the underlying at the close """
+        """
+        Return the historical volatility of the price of the underlying at the close
+
+        Args:
+            symbol: four or five letters unique identifier to find the underlying asset. See the Yahoo Finance
+            website for valid symbols
+            evaluation_date: date at which the volatilities are queried, necessary for up-to-date data
+        """
 
         underlying_data = self.get_underlying_data(symbol, evaluation_date)
         historical_volatilities = pd.DataFrame()
@@ -266,7 +323,14 @@ class OptionDataGathering:
         return historical_volatilities
 
     def get_historical_volatility(self, symbol: str, evaluation_date: str):
-        """ Return the historical volatility at the valuation date """
+        """
+         Return the historical volatility at the valuation date
+
+         Args:
+            symbol: four or five letters unique identifier to find the underlying asset. See the Yahoo Finance
+            website for valid symbols
+            evaluation_date: date at which the volatility is queried, necessary for up-to-date data
+         """
 
         historical_volatilities = self.get_underlying_data(symbol, evaluation_date)
         if self.closest_evaluation_date is None:
@@ -282,7 +346,15 @@ class OptionDataGathering:
         return historical_volatility_at_evaluation_date
 
     def get_GARCH_volatility(self, symbol, evaluation_date: str, log_return: bool = True):
-        """ Function to compute the GARCH volatility of an asset """
+        """
+        Function to compute the GARCH volatility of an asset
+
+        Args:
+            symbol: four or five letters unique identifier to find the underlying asset. See the Yahoo Finance
+            website for valid symbols
+            evaluation_date: date at which the GARCH volatility is queried, necessary for up-to-date data
+            log_return: True to compute the GARCH volatility on the log returns, false to compute it on the returns
+        """
 
         if log_return:
             returns = np.array(self.get_underlying_data(symbol, evaluation_date )['Log_return'])
@@ -295,10 +367,18 @@ class OptionDataGathering:
         model = arch_model(returns, vol="GARCH", p=1, q=1, rescale=False)
         fit = model.fit(show_warning=False).conditional_volatility
         sys.stdout = old_stdout  # reset old stdout
+
         return fit
 
     def get_calibration_Merton(self, symbol: str, evaluation_date: str):
-        """ Get the calibration for an asset for the Merton model """
+        """
+        Get the calibration for an asset for the Merton model
+
+        Args:
+            symbol: four or five letters unique identifier to find the underlying asset. See the Yahoo Finance
+            website for valid symbols
+            evaluation_date: date at which the calibration is queried, necessary for up-to-date data
+        """
 
         # Create a file path to load the cache
         file_path = file_path = './results/{}/MertonParameters.csv'.format(symbol)
@@ -326,7 +406,14 @@ class OptionDataGathering:
         return variables
 
     def get_calibration_Heston(self, symbol, evaluation_date):
-        """ Get the calibration for an asset for the Merton model """
+        """
+         Get the calibration for an asset for the Merton model
+
+         Args:
+             symbol: four or five letters unique identifier to find the underlying asset. See the Yahoo Finance
+             website for valid symbols
+             evaluation_date: date at which the calibration is queried, necessary for up-to-date data
+         """
 
         # Create a file path to load the cache
         file_path = file_path = './results/{}/HestonParameters.csv'.format(symbol)
@@ -340,10 +427,12 @@ class OptionDataGathering:
             log_returns = np.array(self.get_underlying_data(symbol, evaluation_date)['Log_return'])
             log_returns = log_returns[~np.isnan(log_returns)]
             volatility = self.get_GARCH_volatility(symbol, evaluation_date)
+            spotvol = volatility[-1]
 
             # Get the calibration for the Merton model
             calibrator = Calibration.CalibrateVanilla(log_returns, volatility)
-            variables = np.array(calibrator.heston_calibrate())
+            variables = np.array(np.append(calibrator.heston_calibrate(),spotvol))
+
             if self.verbose:
                 print('Computed the Heston model parameters.')
             if self.save_data:
@@ -354,7 +443,17 @@ class OptionDataGathering:
         return variables
 
     def get_implied_volatility(self, symbol, strike, expiration_date, evaluation_date, option_type='call'):
-        """ Get the implied volatility internally computed. WARNING: very time-consuming, only works for AAPL """
+        """
+        Get the implied volatility internally computed. WARNING: very time-consuming, only works for AAPL
+
+        Args:
+            symbol: four or five letters unique identifier to find the underlying asset. See the Yahoo Finance
+            website for valid symbols
+            strike: strike price of the option for whom the implied volatility is computed
+            expiration_date: exercise date of the option
+            evaluation_date: date at which the implied volatility is queried, necessary for up-to-date data
+            option type: etiher call or put
+        """
 
         list_underlying_iv = ['AAPL']
         if symbol in list_underlying_iv:
@@ -367,6 +466,17 @@ class OptionDataGathering:
         return iv
 
     def SigmaFromIv(self, symbol, strike, expiration_date, evaluation_date, option_type):
+        """
+        Get the implied volatility of an option from the Yahoo Finance data
+
+        Args:
+            symbol: four or five letters unique identifier to find the underlying asset. See the Yahoo Finance
+            website for valid symbols
+            strike: strike price of the option for whom the implied volatility is computed
+            expiration_date: exercise date of the option
+            evaluation_date: date at which the implied volatility is queried, necessary for up-to-date data
+            option type: etiher call or put
+        """
 
         donnees = self.get_option_data(symbol, option_type, expiration_date, evaluation_date)
         row = donnees[donnees['strike'] == strike]
@@ -379,6 +489,13 @@ class OptionDataGathering:
             return iv
 
     def time_to_maturity(self, expiration_date, evaluation_date=None):
+        """
+        Return the time difference between two dates in days
+
+        Args:
+            expiration_date: end date
+            evaluation_date: begin date
+        """
         if evaluation_date is None:
             evaluation = datetime.today()
         else:

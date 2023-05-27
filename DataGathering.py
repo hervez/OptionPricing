@@ -391,10 +391,9 @@ class OptionDataGathering:
             # Get the log returns to calibrate and their GARCH volatility
             log_returns = np.array(self.get_underlying_data(symbol, evaluation_date)['Log_return'])
             log_returns = log_returns[~np.isnan(log_returns)]
-            volatility = self.get_GARCH_volatility(symbol, evaluation_date)
 
             # Get the calibration for the Merton model
-            calibrator = Calibration.CalibrateVanilla(log_returns, volatility)
+            calibrator = Calibration.CalibrateVanilla(log_returns)
             variables = np.array(calibrator.merton_calibrate())
             if self.verbose:
                 print('Computed the Merton model parameters.')

@@ -258,6 +258,7 @@ class OptionPricerMerton(OptionPricer):
             Nd2_n = norm.cdf(d2_n, 0, 1)  # N(d2_n)
             cn = self.S_0 * Nd1_n - self.K * Nd2_n * math.e ** (-r_n * self.T)
             s += cn * fpoisson
+            i += 1
         return s
 
     def get_put(self):

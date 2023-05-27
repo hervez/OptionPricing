@@ -54,7 +54,8 @@ class CalibrateVanilla:
         """
         Gives the pdf of a Merton Jump Diffusion model, given a set of variables and x
         !!! Here, I have chosen t = 1 in order to simplify the calculation.
-        The formula should be rewritten as it is in our paper for another t
+        The formula should be rewritten as it is in the followong paper for another t (page 725):
+        https://www.ijpam.eu/contents/2016-109-3/19/19.pdf  
         The varaibles are the following:
             Alpha : average of the log jump
             lamda : average number of jumps

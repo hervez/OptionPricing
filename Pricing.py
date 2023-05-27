@@ -343,7 +343,7 @@ class OptionPricerHeston(OptionPricerFourier2):
         self.theta = theta
         self.spotvol = spotvol
 
-    def Modified_Heston_cf(self, u):  # as proposed by Shoutens #Not sure if it's the same sigma
+    def Modified_Heston_cf(self, u):  # as proposed by Shoutens in "A perfect Calibration! Now what?" https://perswww.kuleuven.be/~u0009713/ScSiTi03.pdf
         d = np.sqrt((self.rho * self.theta * u * 1j - self.kappa) ** 2 - self.theta ** 2 * (-1j * u - u ** 2))
         b = self.kappa - self.rho * self.theta * u * 1j
         g = (b - d) / (b + d)

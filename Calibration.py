@@ -85,7 +85,7 @@ class CalibrateVanilla:
             sample_val = 1 / len(self.sample)  # Adjust the scale of the sample value to match the density
             diff = merton_val - sample_val
             sum_diff += np.log(diff ** 2)
-        return -sum_diff
+        return - sum_diff
     
     def merton_calibrate(self):
         """
@@ -163,19 +163,18 @@ class CalibrateVanilla:
         """
         Function used in order to get nice graphics for the paper
         """
-        mean, vol = self.BScalibrate()
-        x = np.linspace(np.min(self.sample), np.max(self.sample), 100)
+        mean, vol = self.bscalibrate()
+        x = np.linspace(-2, 5, 100)
         gauss = self.normalpdf(x, mean, vol)
         variables = self.merton_calibrate()
         merton = self.mertonpdf(variables, x)
-        heston = self.heston_calibrate()
-        variables = [1, 3, 2, -1, 2] # A revoir
-        truemerton = self.mertonpdf(variables, x) # A revoir
+        if self.volatility.any() :
+            heston = self.heston_calibrate()
+            print(heston)
         plt.figure()
-        plt.hist(self.sample, density=True, label='Random Sample', bins=100)
+        plt.hist(self.sample, density=True, range=(-2, 5), label='Random Sample', bins=100)
         plt.plot(x, gauss, label='Normal Curve')
         plt.plot(x, merton, label='Merton Density')
-        plt.plot(x, truemerton, label='True Merton')
         plt.xlabel('Value')
         plt.ylabel('Density')
         plt.title('Random Sample, Merton Jump Diffusion Curve and Normal Curve')
@@ -183,72 +182,4 @@ class CalibrateVanilla:
         sm.qqplot(self.sample)
         plt.show()
 
-""""
-samplesize = 200
-sample = np.random.normal(loc=0.7, scale=0.3, size=samplesize)
-results = stochastic_vol(sample)
-volatility = results.conditional_volatility
-print(volatility)
-ex = CalibrateVanilla(sample,volatility)
-ex.plotreturns()
 
-
-samplesize = 200
-sample = np.random.normal(loc=0.7, scale=0.3, size=samplesize)
-for i in range(0,200):
-    jumpoccurence = np.random.poisson(lam = 1)
-    sum=0
-    for i in range(0,jumpoccurence):
-        jump = np.random.normal(loc=0,scale=0.3)
-        sum += jump
-    sample[i] += sum
-results = stochastic_vol(sample)
-volatility = results
-ex = CalibrateVanilla(sample,volatility)
-ex.plotreturns()
-
-samplesize = 900
-sample = np.linspace(-1,samplesize)
-sample[0] = np.random.normal(0.7, 0.3)
-v= 0.3
-for i in range(1, len(sample)):
-    v = 0.3*v + 0.3*np.random.chisquare(1)
-    sample[i] = sample[0] = np.random.normal(0.7,np.sqrt(v))
-sample = sample[np.isfinite(sample)]
-results = stochastic_vol(sample)
-volatility = results
-ex = CalibrateVanilla(sample,volatility)
-ex.plotreturns()
-"""
-
-""""
-If we want to price exotic options, this could be a nice way to calibrate the Heston Model
-class CalibrateExotic:
-    def __init__(self, callprices, K, T):
-        self.callprices = callprices
-        self.K = K
-        self.T = T
-
-   def objective_function(self, variables):
-        r = 0.05  # please put the real risk-free rate
-        S = 100  # please put the real stock price
-        rHeston = 0.05
-        rho, kappa, eta, theta = variables
-        sum_diff = 0
-
-        for i in self.callprices:
-            true_call = self.callprices[i]
-            estimation = Heston(S, r, self.K[i], self.T[i], self.rho, self.kappa, self.eta, self.theta) #We should create this function from what we have done in pricing.py
-            squared_diff = (true_call - estimation) ** 2
-            sum_diff += np.log(squared_diff)
-        return -sum_diff
-
-    def heston_calibrate(self):
-        initial_guess = [0, 2, 0.01, 0.01]
-        bounds = [(-1, 1), (1e-10, None), (1e-10, None), (1e-10, None)]
-        result = scipy.optimize.minimize(self.objective_function, initial_guess, method='L-BFGS-B', bounds=bounds)
-        optimized_variables = result.x
-        return optimized_variables
-
-
-"""

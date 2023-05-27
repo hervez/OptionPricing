@@ -203,7 +203,7 @@ for i in range(0,200):
         sum += jump
     sample[i] += sum
 results = stochastic_vol(sample)
-volatility = results.conditional_volatility
+volatility = results
 ex = CalibrateVanilla(sample,volatility)
 ex.plotreturns()
 
@@ -212,11 +212,11 @@ sample = np.linspace(-1,samplesize)
 sample[0] = np.random.normal(0.7, 0.3)
 v= 0.3
 for i in range(1, len(sample)):
-    v = 0.5*v + 0.5*np.random.chisquare(1)
+    v = 0.3*v + 0.3*np.random.chisquare(1)
     sample[i] = sample[0] = np.random.normal(0.7,np.sqrt(v))
 sample = sample[np.isfinite(sample)]
 results = stochastic_vol(sample)
-volatility = results.conditional_volatility
+volatility = results
 ex = CalibrateVanilla(sample,volatility)
 ex.plotreturns()
 """
@@ -238,7 +238,7 @@ class CalibrateExotic:
 
         for i in self.callprices:
             true_call = self.callprices[i]
-            estimation = Heston(S, r, self.K[i], self.T[i], self.rho, self.kappa, self.eta, self.theta)
+            estimation = Heston(S, r, self.K[i], self.T[i], self.rho, self.kappa, self.eta, self.theta) #We should create this function from what we have done in pricing.py
             squared_diff = (true_call - estimation) ** 2
             sum_diff += np.log(squared_diff)
         return -sum_diff

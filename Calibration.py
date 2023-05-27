@@ -50,11 +50,12 @@ class CalibrateVanilla:
         """
         return (1 / (vol * np.sqrt(2 * np.pi))) * np.exp(-(x - mean) ** 2 / (2 * vol ** 2))
     
-    def mertonpdf(self, variables, x): #"works only for t =1!!!"
+    def mertonpdf(self, variables, x): #"works only for t = 1!!!"
         """
         Gives the pdf of a Merton Jump Diffusion model, given a set of variables and x
         !!! Here, I have chosen t = 1 in order to simplify the calculation.
-        The formula should be rewritten as it is in the followong paper for another t (page 725):
+        The t was dropped in order to ease the calculation, the lambda's bound constraint in merton_calibrate(self) should change:
+        This formula should be rewritten as it is in the following paper for another t != 1 (page 725)
         https://www.ijpam.eu/contents/2016-109-3/19/19.pdf  
         The varaibles are the following:
             Alpha : average of the log jump
@@ -117,6 +118,7 @@ class CalibrateVanilla:
             Eta : long-term price variance
             Theta : volatility of the volatility
         This method isn't reliable and can sometimes compute weird estimations.
+        The formula comes from this paper at page 7: https://www.valpo.edu/mathematics-statistics/files/2015/07/Estimating-Option-Prices-with-Heston%E2%80%99s-Stochastic-Volatility-Model.pdf
         The Heston method is often calibrated with the price of vanilla options and used for more exotic options
         """
         mu, rho, kappa, eta, theta = variables

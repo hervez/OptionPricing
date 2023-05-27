@@ -92,7 +92,7 @@ class CalibrateVanilla:
         Goal: we want to maximize the log-likelihood function (minimize -1*log-likelihood function)
         Returns: alpha, lamda, delta, mu, sigma in that order
         """
-        initial_guess = [0, 1, 0.3, 0.7, 0.3]
+        initial_guess = [0, 1, 0.3, np.mean(self.sample), np.std(self.sample)]
         bounds = [(-10, 10), (0, 3), (1e-10, None), (-10, 10), (1e-10, None)]
         result = scipy.optimize.minimize(self.objective_merton, initial_guess, method='L-BFGS-B', bounds=bounds)
         optimized_variables = result.x
@@ -153,7 +153,7 @@ class CalibrateVanilla:
         Returns: mu, rho, kappa, eta, theta in that order
         """
         self.simplereturns()
-        initial_guess = [0.7, 0, 2, 0.5, 0.5]
+        initial_guess = [np.mean(self.sample), 0, 2, 0.5, np.var(self.sample)]
         bounds = [(None, None), (-1 + 1e-10, 1 - 1e-10), (1e-10, None), (1e-10, None), (1e-10, None)]
         result = scipy.optimize.minimize(self.heston_objective, initial_guess, method='L-BFGS-B', bounds=bounds)
         optimized_variables = result.x
@@ -172,7 +172,7 @@ class CalibrateVanilla:
         variables = [1, 3, 2, -1, 2] # A revoir
         truemerton = self.mertonpdf(variables, x) # A revoir
         plt.figure()
-        plt.hist(self.sample, density=True, label='Random Sample', bins=500)
+        plt.hist(self.sample, density=True, label='Random Sample', bins=100)
         plt.plot(x, gauss, label='Normal Curve')
         plt.plot(x, merton, label='Merton Density')
         plt.plot(x, truemerton, label='True Merton')

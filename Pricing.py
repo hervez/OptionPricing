@@ -249,7 +249,6 @@ class OptionPricerMerton(OptionPricer):
             # a large enough number
             fpoisson = (self.lambdaprime * self.T) ** i * (math.e ** (-self.lambdaprime * self.T)) / math.factorial(i)
             Fpoisson += fpoisson
-            i += 1
             r_n = self.r - self.lamda * self.k + i * self.y / self.T
             sigma_n = math.sqrt(self.sigmaMerton ** 2 + i * (self.delta ** 2) / self.T)
             d1_n = (math.log(self.S_0 / self.K) + (r_n + (sigma_n ** 2) / 2) * self.T) / (sigma_n * math.sqrt(self.T))
@@ -257,6 +256,7 @@ class OptionPricerMerton(OptionPricer):
             Nd1_n = norm.cdf(d1_n, 0, 1)  # N(d1_n)
             Nd2_n = norm.cdf(d2_n, 0, 1)  # N(d2_n)
             cn = self.S_0 * Nd1_n - self.K * Nd2_n * math.e ** (-r_n * self.T)
+            i += 1
             s += cn * fpoisson
         return s
 
@@ -270,7 +270,6 @@ class OptionPricerMerton(OptionPricer):
             # a large enough number
             fpoisson = (self.lambdaprime * self.T) ** i * (math.e ** (-self.lambdaprime * self.T)) / math.factorial(i)
             Fpoisson += fpoisson
-            i += 1
             r_n = self.r - self.lamda * self.k + i * self.y / self.T
             sigma_n = math.sqrt(self.sigmaMerton ** 2 + i * (self.delta ** 2) / self.T)
             d1_n = (math.log(self.S_0 / self.K) + (r_n + (sigma_n ** 2) / 2) * self.T) / (sigma_n * math.sqrt(self.T))
@@ -278,6 +277,7 @@ class OptionPricerMerton(OptionPricer):
             Nmind1_n = norm.cdf(-d1_n, 0, 1)  # N(-d1_n)
             Nmind2_n = norm.cdf(-d2_n, 0, 1)  # N(-d2_n)
             p_n = self.K * Nmind2_n * math.e ** (-r_n * self.T) - self.S_0 * Nmind1_n
+            i += 1
             s += p_n * fpoisson
         return s
 

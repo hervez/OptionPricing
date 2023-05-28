@@ -344,6 +344,20 @@ class OptionDataGathering:
                     historical_volatilities['Date'] == self.closest_evaluation_date, 'Vol'].iloc[0]
 
         return historical_volatility_at_evaluation_date
+    
+        def get_sample_volatility_from_calibration(self, symbol: str, evaluation_date: str):
+        '''
+        This is another method to estimate the volatility if needed.
+        One needs to replace get_historical_volatility by this function's name
+        if he wants to use this method.
+        '''
+        log_returns = np.array(self.get_underlying_data(symbol, evaluation_date)['Log_return'])
+        log_returns = log_returns[~np.isnan(log_returns)]
+
+            # Get the calibration for the Merton model
+        calibrator = Calibration.CalibrateVanilla(log_returns)
+        mean, vol = calibrator.bscalibrate(log_returns)
+        return vol
 
     def get_GARCH_volatility(self, symbol, evaluation_date: str, log_return: bool = True):
         """
@@ -388,7 +402,7 @@ class OptionDataGathering:
             if self.verbose:
                 print("Merton model parameters obtained from the cache.")
         except OSError:
-            # Get the log returns to calibrate and their GARCH volatility
+            # Get the log returns to calibrate
             log_returns = np.array(self.get_underlying_data(symbol, evaluation_date)['Log_return'])
             log_returns = log_returns[~np.isnan(log_returns)]
 
@@ -406,7 +420,7 @@ class OptionDataGathering:
 
     def get_calibration_Heston(self, symbol, evaluation_date):
         """
-         Get the calibration for an asset for the Merton model
+         Get the calibration for an asset for the Heston model
 
          Args:
              symbol: four or five letters unique identifier to find the underlying asset. See the Yahoo Finance
@@ -428,7 +442,7 @@ class OptionDataGathering:
             volatility = self.get_GARCH_volatility(symbol, evaluation_date)
             spotvol = volatility[-1]
 
-            # Get the calibration for the Merton model
+            # Get the calibration for the Heston model
             calibrator = Calibration.CalibrateVanilla(log_returns, volatility)
             variables = np.array(np.append(calibrator.heston_calibrate(),spotvol))
 

@@ -301,7 +301,7 @@ class OptionDataGathering:
             else:
                 risk_free_rate_at_evaluation_date = risk_free_data['Date'].iloc[0]
 
-        risk_free_rate_at_evaluation_date = (1 + (risk_free_rate_at_evaluation_date / 100)) ** (1/365) - 1
+        risk_free_rate_at_evaluation_date = np.log((1 + (risk_free_rate_at_evaluation_date / 100)) ** (1/365))
 
         return risk_free_rate_at_evaluation_date
 

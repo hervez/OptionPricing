@@ -13,6 +13,7 @@ def stochastic_vol(returns):
     Uses GARCH to estimate volatility for each day in our sample.
     You can use it if you want to calibrate the Heston Model 
     BUT you need to have time series, you cannot just pick any random sample
+    Mainly used for Calibration_test.py
     """
     model = arch_model(returns, vol='Garch', p=1, q=1)
     results = model.fit(show_warning=False)

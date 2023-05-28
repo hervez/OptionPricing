@@ -1,6 +1,10 @@
 import Calibration as cab
 import numpy as np
-
+'''
+These methods were solely used in order to simulate sample following different paths.
+The first one creates random sample following a normal law, the second one includes jumps
+and the last one includes the volatility following a stochastic process
+'''
 samplesize = 1000
 sample = np.random.normal(loc=0.7, scale=0.3, size=samplesize)
 volatility = cab.stochastic_vol(sample)
@@ -36,7 +40,7 @@ ex.plotreturns()
 
 
 """
-If we want to price exotic options, this could be a nice way to calibrate the Heston Model
+If we want to price exotic options, this is a rough sketch of how to calibrate the Heston Model on the price of vanilla Call options
 class CalibrateExotic:
     def __init__(self, callprices, K, T):
         self.callprices = callprices

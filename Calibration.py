@@ -40,10 +40,12 @@ class CalibrateVanilla:
     def bscalibrate(self):
         """
         Returns the mean and volatility of an asset's log return
+        The volatility and the mean was just useful for the graph in plot returns
+        Is not used for the pricing of options. get_hitorical_volatility in DataGathering.py
         """
         mean = np.mean(self.sample)
         vol = np.std(self.sample)
-        return mean, vol #The volatility is used to price the classical BS model, the mean was just useful for the graph in plot returns
+        return mean, vol 
     
     def normalpdf(self, x, mean, vol):
         """

@@ -356,7 +356,7 @@ class OptionDataGathering:
 
             # Get the calibration for the Merton model
             calibrator = Calibration.CalibrateVanilla(log_returns)
-            mean, vol = calibrator.bscalibrate(log_returns)
+            mean, vol = calibrator.bscalibrate()
             return vol
 
     def get_GARCH_volatility(self, symbol, evaluation_date: str, log_return: bool = True):

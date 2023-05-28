@@ -345,20 +345,6 @@ class OptionDataGathering:
 
         return historical_volatility_at_evaluation_date
     
-        def get_sample_volatility_from_calibration(self, symbol: str, evaluation_date: str):
-            """
-            This is another method to estimate the volatility if needed.
-            One needs to replace get_historical_volatility by this function's name
-                if he wants to use this method.
-            """
-            log_returns = np.array(self.get_underlying_data(symbol, evaluation_date)['Log_return'])
-            log_returns = log_returns[~np.isnan(log_returns)]
-
-            # Get the calibration for the Merton model
-            calibrator = Calibration.CalibrateVanilla(log_returns)
-            mean, vol = calibrator.bscalibrate()
-            return vol
-
     def get_GARCH_volatility(self, symbol, evaluation_date: str, log_return: bool = True):
         """
         Function to compute the GARCH volatility of an asset

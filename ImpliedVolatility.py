@@ -120,5 +120,3 @@ class ImpliedVolatilitySurfaceComputer:
 
         return f_iv
 
-if __name__ == '__main__':
-    print(OptionImpliedVolatility('AAPL').get_implied_volatility(200, 22))

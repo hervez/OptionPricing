@@ -331,19 +331,4 @@ class OptionAnalysis:
         print("######################################################################################################")
 
 
-if __name__ == "__main__":
-    analyser = OptionAnalysis(expiration_date='2023-06-09', evaluation_date='2023-05-27')
-    #analyser.complete_analysis()
-    # print(analyser.underlying)time_to_maturity
-    # options = analyser.get_options()
 
-    # options_iv = analyser.estimate_implied_volatility(options)
-
-    # priced_options = analyser.pricing_test(options)
-    # priced_options = analyser.price_option(options)
-    #print(priced_options[5])
-    # for option in priced_options:
-    #     print(option)
-    #analyser.plot(priced_options, False, 'CRR')
-    #analyser.plot_iv(options_iv)
-    # analyser.TexDocument()

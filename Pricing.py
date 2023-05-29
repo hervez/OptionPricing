@@ -361,20 +361,3 @@ class OptionPricerHeston(OptionPricerFourier2):
         return put
 
 
-if __name__ == '__main__':
-    # black_scholes_pricer = OptionPricerlackScholes('AAPL', 'call', '2023-04-21', '2023-04-10', 100)
-    # pricer_CRR = OptionPricerBlackScholes(S_0=175, K=175, T=1, r=0.014, sigma=0.01)
-    # print(pricer_CRR.get_call())
-    pricer_Fourier = OptionPricerFourier(S_0=175, K=175, T=1, r=0.014, sigma=0.01)
-    pricer_FFT = OptionPricerFFT(S_0=175, K=175, T=1, r=0.014, sigma=0.01)
-    print(pricer_Fourier.get_call())
-    print(pricer_FFT.get_call())
-    # call = black_scholes_pricer.get_call()
-    # merton_log_call = black_scholes_pricer.get_MertonLognormalJumpCall()
-    # put = black_scholes_pricer.get_put()
-    # merton_log_put = black_scholes_pricer.get_MertonLognormalJumpPut()
-    # print(call)
-    # print(merton_log_call)  # should be greater or equal to the BS call
-    # print(put)
-    # print(merton_log_put)  # Should be greater or equal to the BS Put
-    # Double check values with https://demonstrations.wolfram.com/OptionPricesInMertonsJumpDiffusionModel/

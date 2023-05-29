@@ -504,20 +504,4 @@ class OptionDataGathering:
         return difference.days
 
 
-if __name__ == '__main__':
-    gatherer = OptionDataGathering(reload=True)
-    # gatherer.get_risk_free_rate('2020-01-01')
-    # print(gatherer.get_implied_volatility('AAPL', 100, '2023-07-21' , 'call'))
-    # print(gatherer.get_option_data('AAPL', 'call', '2022-04-21'))
-    gatherer.get_underlying_value_at_evaluation_date('AAPL', '2023-04-10')
-    # gatherer.get_historical_volatilities('AAPL')
-    # print(gatherer.get_historical_volatility('AAPL', '2023-04-10'))
-    # print(gatherer.get_risk_free_rate('2023-04-10'))
-    # print(gatherer.historical_volatility)
-    # print(gatherer.underlying_value_at_evaluation_date)
-    # print(gatherer.risk_free_rate)
-    # T = gatherer.timeT()/365
-    # print(T)
-    # sigma = gatherer.SigmaFromIv('GOOG', 'call', '2023-04-21')
-    # print(sigma)
-    # K is given by us
+

@@ -60,7 +60,7 @@ class CalibrateVanilla:
         The t was dropped in order to ease the calculation, the lambda's bound constraint in merton_calibrate(self) should change:
         This formula should be rewritten as it is in the following paper for another t != 1 (page 725)
         https://www.ijpam.eu/contents/2016-109-3/19/19.pdf  
-        The varaibles are the following:
+        The variables are the following:
             Alpha : average of the log jump
             lamda : average number of jumps
             delta : volatility of the log jumps
@@ -121,7 +121,8 @@ class CalibrateVanilla:
             Eta : long-term price variance
             Theta : volatility of the volatility
         This method isn't reliable and can sometimes compute weird estimations.
-        The formula comes from this paper at page 7: https://www.valpo.edu/mathematics-statistics/files/2015/07/Estimating-Option-Prices-with-Heston%E2%80%99s-Stochastic-Volatility-Model.pdf
+        The formula comes from the following paper at page 7. Please note that we did not use the same symbols for the model: 
+        https://www.valpo.edu/mathematics-statistics/files/2015/07/Estimating-Option-Prices-with-Heston%E2%80%99s-Stochastic-Volatility-Model.pdf
         The Heston method is often calibrated with the price of vanilla options and used for more exotic options
         """
         mu, rho, kappa, eta, theta = variables

@@ -308,9 +308,6 @@ class OptionPricerFourier2(OptionPricer):
     def get_call(self, cf):
         return self.S_0 * self.delta_option(cf) - self.prob2(cf) * self.K * math.exp(-self.r * self.T)
 
-    def get_Call(self):
-        c = self.get_call_usingFourier(self.Brownian_Motion_cf)
-        return c
 
     def get_call_usingFourier(self, cf):
         return self.S_0 * self.delta_option(cf) - self.prob2(cf) * self.K * math.exp(-self.r * self.T)
